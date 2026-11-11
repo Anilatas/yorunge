@@ -1,6 +1,6 @@
-# Yörüngen
+# Yörünge
 
-Ders çalışmayı daha planlı ve verimli hale getir. Yörüngen; haftalık program, soru çözücü, zengin ders notları ve Pomodoro araçlarını bir araya getirerek kendi çalışma düzenini kurmana yardımcı olur.
+Ders çalışmayı daha planlı ve verimli hale getir. Yörünge; haftalık program, soru çözücü, zengin ders notları ve Pomodoro araçlarını bir araya getirerek kendi çalışma düzenini kurmana yardımcı olur.
 
 **Farklı araçlarla kendi ders çalışma yörüngeni oluştur.**
 
