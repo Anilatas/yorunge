@@ -341,21 +341,35 @@
   const themeToggle = document.getElementById('themeToggle');
   const themeText = document.getElementById('themeText');
   const themeIcon = document.getElementById('themeIcon');
+  const THEME_STORAGE_KEY = 'yorunge-theme';
 
   function applyTheme(themeName) {
     const theme = themeName === 'dark' ? 'dark' : 'light';
     document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('solver-theme', theme);
+    document.documentElement.style.colorScheme = theme;
     themeText.textContent = theme === 'dark' ? 'Açık' : 'Koyu';
     themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
   }
 
-  const savedTheme = localStorage.getItem('solver-theme') || 'light';
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+    || localStorage.getItem('solver-theme')
+    || localStorage.getItem('planner-theme')
+    || 'light';
   applyTheme(savedTheme);
+  if (localStorage.getItem(THEME_STORAGE_KEY) === null) {
+    localStorage.setItem(THEME_STORAGE_KEY, document.body.getAttribute('data-theme'));
+  }
 
   themeToggle.addEventListener('click', () => {
     const nextTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     applyTheme(nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === THEME_STORAGE_KEY) {
+      applyTheme(event.newValue || 'light');
+    }
   });
 
   keyInput.value = localStorage.getItem('ai_key') || '';

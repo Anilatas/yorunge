@@ -472,10 +472,10 @@
     const value = theme === 'dark' ? 'dark' : 'light';
     document.body.dataset.theme = value;
     document.documentElement.style.colorScheme = value;
-    localStorage.setItem('planner-theme', value);
     elements.themeText.textContent = value === 'dark' ? 'Açık' : 'Koyu';
     elements.themeIcon.textContent = value === 'dark' ? '☀️' : '🌙';
   }
+  const THEME_STORAGE_KEY = 'yorunge-theme';
 
   elements.profile.addEventListener('change', () => {
     activeProfile = elements.profile.value;
@@ -527,14 +527,30 @@
     elements.alarm.volume = Number(event.target.value);
     localStorage.setItem('pomo_alarm_volume', event.target.value);
   });
-  elements.themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
+  elements.themeToggle.addEventListener('click', () => {
+    const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  });
+  window.addEventListener('storage', (event) => {
+    if (event.key === THEME_STORAGE_KEY) {
+      applyTheme(event.newValue || 'light');
+    }
+  });
 
   renderProfiles();
   syncInputs();
   renderHistory();
   updateModeButtons();
   updateDisplay();
-  applyTheme(localStorage.getItem('planner-theme') || 'light');
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+    || localStorage.getItem('solver-theme')
+    || localStorage.getItem('planner-theme')
+    || 'light';
+  applyTheme(savedTheme);
+  if (localStorage.getItem(THEME_STORAGE_KEY) === null) {
+    localStorage.setItem(THEME_STORAGE_KEY, document.body.dataset.theme);
+  }
   setInterval(tick, 250);
 })();
 </script>

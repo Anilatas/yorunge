@@ -1197,11 +1197,11 @@
     const value = theme === 'dark' ? 'dark' : 'light';
     document.body.dataset.theme = value;
     document.documentElement.style.colorScheme = value;
-    localStorage.setItem('planner-theme', value);
     document.getElementById('themeText').textContent = value === 'dark' ? 'Açık' : 'Koyu';
     document.getElementById('themeIcon').textContent = value === 'dark' ? '☀️' : '🌙';
   }
 
+  const THEME_STORAGE_KEY = 'yorunge-theme';
   document.getElementById('newNoteBtn').addEventListener('click', addNote);
   document.getElementById('deleteNoteBtn').addEventListener('click', deleteCurrentNote);
   document.getElementById('uploadPhotoBtn').addEventListener('click', () => elements.photoInput.click());
@@ -1244,12 +1244,28 @@
   elements.panel.addEventListener('pointermove', movePanel);
   elements.panel.addEventListener('pointerup', () => { panelDrag = null; });
   elements.panel.addEventListener('pointercancel', () => { panelDrag = null; });
-  themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  });
+  window.addEventListener('storage', (event) => {
+    if (event.key === THEME_STORAGE_KEY) {
+      applyTheme(event.newValue || 'light');
+    }
+  });
   window.addEventListener('pagehide', flushSave);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
 
   async function initialize() {
-    applyTheme(localStorage.getItem('planner-theme') || 'light');
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+      || localStorage.getItem('solver-theme')
+      || localStorage.getItem('planner-theme')
+      || 'light';
+    applyTheme(savedTheme);
+    if (localStorage.getItem(THEME_STORAGE_KEY) === null) {
+      localStorage.setItem(THEME_STORAGE_KEY, document.body.dataset.theme);
+    }
     setupPalette();
     try {
       database = await openDatabase();
