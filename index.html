@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akıllı TYT-AYT Soru Çözüm Asistanı</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body {
+    background: linear-gradient(180deg, #f3f6fb 0%, #eef3f8 100%);
+    min-height: 100vh;
+    color: #1f2937;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  body[data-theme="dark"] {
+    background: radial-gradient(circle at top left, #1f2b3d 0%, #111827 32%, #0f172a 100%);
+    color: #e2e8f0;
+  }
+  .container {
+    min-height: 100vh;
+    width: 100%;
+    padding: 20px 18px 30px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+  body[data-theme="dark"] .container { background: rgba(15, 23, 42, 0.78); }
+  .solver-content {
+    width: min(650px, 100%);
+    margin: 20px auto 0;
+    padding: 30px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+  }
+  body[data-theme="dark"] .solver-content {
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 22px 60px rgba(2, 6, 23, 0.42);
+  }
+  .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.18); flex-wrap: wrap; }
+  .nav-btn {
+    padding: 9px 16px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.72);
+    color: #475569;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  body[data-theme="dark"] .nav-btn {
+    background: rgba(30, 41, 59, 0.9);
+    color: #cbd5e1;
+  }
+  .nav-btn.active {
+    background: linear-gradient(135deg, #e0ecff, #dfe7ff);
+    color: #1e3a8a;
+    box-shadow: 0 8px 18px rgba(96, 165, 250, 0.14);
+  }
+  body[data-theme="dark"] .nav-btn.active {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.24));
+    color: #dbeafe;
+  }
+  .nav-btn:hover { transform: translateY(-1px); opacity: 0.98; }
+  h1 { text-align: center; color: #0f172a; margin-bottom: 6px; font-size: 24px; }
+  body[data-theme="dark"] h1 { color: #f8fafc; }
+  p.sub { text-align: center; color: #64748b; font-size: 13px; margin-bottom: 20px; }
+  body[data-theme="dark"] p.sub { color: #94a3b8; }
+
+  .box {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+  body[data-theme="dark"] .box {
+    background: rgba(30, 41, 59, 0.9);
+  }
+  label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px; }
+  body[data-theme="dark"] label { color: #cbd5e1; }
+  input[type="password"], select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.05);
+  }
+  body[data-theme="dark"] input[type="password"], body[data-theme="dark"] select {
+    color: #e2e8f0;
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.35);
+  }
+
+  .row { display: flex; gap: 10px; margin-bottom: 15px; }
+  .row select { flex: 1; }
+
+  .upload-area {
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(239,246,255,0.8));
+    border: 2px dashed rgba(96, 165, 250, 0.4);
+    color: #1e3a8a;
+    text-align: center;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 15px;
+  }
+  body[data-theme="dark"] .upload-area {
+    background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.8));
+    color: #dbeafe;
+  }
+  .upload-area input[type="file"] { margin-top: 10px; }
+
+  #previewBox { display: none; text-align: center; margin-bottom: 15px; }
+  #previewImg { max-width: 100%; max-height: 200px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.2); }
+  .remove-btn {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    font-weight: 700;
+  }
+
+  .action-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
+  }
+  .action-btn:disabled { background: rgba(148, 163, 184, 0.18); color: #94a3b8; cursor: not-allowed; box-shadow: none; }
+  .action-btn:hover:not(:disabled) { filter: brightness(1.04); }
+
+  #loading { text-align: center; color: #93c5fd; font-weight: 700; margin: 15px 0; display: none; }
+  #error { background: rgba(127, 29, 29, 0.22); color: #fca5a5; padding: 10px; border-radius: 10px; font-size: 13px; margin-top: 15px; display: none; border: 1px solid rgba(248, 113, 113, 0.25); }
+
+  #resultContainer {
+    background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(248,250,252,0.9));
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    display: none;
+    font-size: 14px;
+    line-height: 1.6;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    color: #0f172a;
+  }
+  body[data-theme="dark"] #resultContainer {
+    background: linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.85));
+    color: #e2e8f0;
+  }
+  #resultContainer h2 { color: #1d4ed8; font-size: 16px; margin: 12px 0 5px; }
+  body[data-theme="dark"] #resultContainer h2 { color: #93c5fd; }
+
+  .theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 50;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.8);
+    color: #0f172a;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    transition: transform 0.2s ease, filter 0.2s ease;
+  }
+  body[data-theme="dark"] .theme-toggle {
+    background: rgba(15, 23, 42, 0.8);
+    color: #f8fafc;
+    border-color: rgba(148, 163, 184, 0.18);
+  }
+  .theme-toggle:hover { transform: translateY(-1px); filter: brightness(1.04); }
+  .theme-toggle .label { display: inline-flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body data-theme="light">
+<button type="button" id="themeToggle" class="theme-toggle" aria-label="Tema değiştir">
+  <span class="label"><span id="themeIcon">🌙</span> <span id="themeText">Koyu</span></span>
+</button>
+
+<div class="container">
+  <div class="nav-bar">
+    <a href="index.html" class="nav-btn active">📐 Soru Çözücü</a>
+    <a href="planlayici.html" class="nav-btn">📅 Haftalık Program</a>
+    <a href="notlar.html" class="nav-btn">📝 Notlar</a>
+    <a href="pomodoro.html" class="nav-btn">⏱️ Pomodoro</a>
+  </div>
+
+  <main class="solver-content">
+  <h1>🧠 Soru Çözüm Asistanı</h1>
+  <p class="sub">TYT & AYT Sorularını Yapay Zekaya Çözdür</p>
+
+  <div class="box">
+    <label>Gemini API Anahtarı</label>
+    <input type="password" id="apiKey" placeholder="API anahtarınızı buraya yapıştırın...">
+  </div>
+
+  <div class="row">
+    <select id="exam">
+      <option value="TYT">TYT</option>
+      <option value="AYT">AYT</option>
+    </select>
+    <select id="subject">
+      <option value="Matematik">Matematik</option>
+      <option value="Geometri">Geometri</option>
+      <option value="Fizik">Fizik</option>
+      <option value="Kimya">Kimya</option>
+      <option value="Biyoloji">Biyoloji</option>
+      <option value="Türkçe">Türkçe</option>
+    </select>
+  </div>
+
+  <div class="upload-area">
+    <label for="fileInput" style="cursor: pointer; font-weight: bold; margin-bottom: 8px; display: block;">📷 Soru Fotoğrafını Seç</label>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <div id="previewBox">
+    <img id="previewImg" alt="Önizleme">
+    <div><button class="remove-btn" onclick="clearImage()">Fotoğrafı Kaldır</button></div>
+  </div>
+
+  <button class="action-btn" id="solveBtn" onclick="solve()" disabled>Soruyu Çöz 🚀</button>
+
+  <div id="loading">Yapay zeka soruyu inceliyor, lütfen bekleyin...</div>
+  <div id="error"></div>
+
+  <div id="resultContainer">
+    <div id="resultText"></div>
+  </div>
+  </main>
+</div>
+
+<script>
+  const SOLVER_STORAGE_KEY = 'solver_state_v1';
+  let cleanBase64 = null;
+  let solverRequestInFlight = false;
+
+  function resetSolverUIState() {
+    cleanBase64 = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('previewBox').style.display = 'none';
+    document.getElementById('resultText').innerHTML = '';
+    document.getElementById('resultContainer').style.display = 'none';
+    localStorage.removeItem(SOLVER_STORAGE_KEY);
+    syncSolveButtonState();
+  }
+
+  function syncSolveButtonState() {
+    const hasImage = Boolean(cleanBase64) || (document.getElementById('previewImg').src && document.getElementById('previewImg').src !== 'about:blank');
+    const hasApiKey = Boolean(keyInput.value.trim());
+    const btn = document.getElementById('solveBtn');
+    btn.disabled = !hasImage || !hasApiKey || solverRequestInFlight;
+  }
+
+  function saveSolverState(extra = {}) {
+    const state = {
+      imageBase64: cleanBase64,
+      previewUrl: document.getElementById('previewImg').src || '',
+      exam: document.getElementById('exam').value,
+      subject: document.getElementById('subject').value,
+      resultHtml: document.getElementById('resultText').innerHTML,
+      resultVisible: window.getComputedStyle(document.getElementById('resultContainer')).display !== 'none',
+      apiKey: keyInput.value.trim(),
+      hasImage: Boolean(cleanBase64),
+      inProgress: Boolean(extra.inProgress ?? false),
+      pendingPrompt: extra.pendingPrompt ?? '',
+      updatedAt: Date.now(),
+      ...extra
+    };
+    localStorage.setItem(SOLVER_STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function restoreSolverState() {
+    const saved = JSON.parse(localStorage.getItem(SOLVER_STORAGE_KEY) || 'null');
+    if (!saved) return;
+
+    const hasDemoState = /Cevap:\s*test|Test prompt/i.test(String(saved.resultHtml || '')) || /Test prompt/i.test(String(saved.pendingPrompt || ''));
+    if (hasDemoState) {
+      resetSolverUIState();
+      return;
+    }
+
+    if (saved.imageBase64 && saved.previewUrl) {
+      cleanBase64 = saved.imageBase64;
+      document.getElementById('previewImg').src = saved.previewUrl;
+      document.getElementById('previewBox').style.display = 'block';
+      syncSolveButtonState();
+    }
+
+    if (saved.exam) document.getElementById('exam').value = saved.exam;
+    if (saved.subject) document.getElementById('subject').value = saved.subject;
+
+    if (saved.resultHtml) {
+      document.getElementById('resultText').innerHTML = saved.resultHtml;
+      document.getElementById('resultContainer').style.display = saved.resultVisible ? 'block' : 'none';
+    }
+
+    if (saved.inProgress) {
+      const message = 'Önceki çözüm kaldığı yerden devam ediyor...';
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').textContent = message;
+      document.getElementById('solveBtn').disabled = true;
+    }
+  }
+
+  const keyInput = document.getElementById('apiKey');
+  const themeToggle = document.getElementById('themeToggle');
+  const themeText = document.getElementById('themeText');
+  const themeIcon = document.getElementById('themeIcon');
+
+  function applyTheme(themeName) {
+    const theme = themeName === 'dark' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('solver-theme', theme);
+    themeText.textContent = theme === 'dark' ? 'Açık' : 'Koyu';
+    themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+
+  const savedTheme = localStorage.getItem('solver-theme') || 'light';
+  applyTheme(savedTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+  });
+
+  keyInput.value = localStorage.getItem('ai_key') || '';
+  keyInput.addEventListener('input', () => {
+    localStorage.setItem('ai_key', keyInput.value.trim());
+    syncSolveButtonState();
+    saveSolverState();
+  });
+
+  document.getElementById('exam').addEventListener('change', saveSolverState);
+  document.getElementById('subject').addEventListener('change', saveSolverState);
+
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        cleanBase64 = dataUrl.split(',')[1];
+
+        document.getElementById('previewImg').src = dataUrl;
+        document.getElementById('previewBox').style.display = 'block';
+        document.getElementById('error').style.display = 'none';
+        syncSolveButtonState();
+        saveSolverState();
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function clearImage() {
+    cleanBase64 = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('previewBox').style.display = 'none';
+    document.getElementById('resultText').innerHTML = '';
+    document.getElementById('resultContainer').style.display = 'none';
+    syncSolveButtonState();
+    localStorage.removeItem(SOLVER_STORAGE_KEY);
+  }
+
+  window.addEventListener('pagehide', saveSolverState);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveSolverState();
+  });
+
+  restoreSolverState();
+  syncSolveButtonState();
+
+  setTimeout(() => {
+    const saved = JSON.parse(localStorage.getItem(SOLVER_STORAGE_KEY) || 'null');
+    if (saved && saved.inProgress && saved.pendingPrompt && saved.imageBase64) {
+      resumePendingSolve();
+    }
+  }, 400);
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function formatResponseText(text) {
+    if (!text) return '';
+
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/###\s+(.*)/g, '<h2>$1</h2>')
+      .replace(/##\s+(.*)/g, '<h2>$1</h2>')
+      .replace(/#\s+(.*)/g, '<h2>$1</h2>')
+      .replace(/\n\s*\n/g, '<br><br>')
+      .replace(/\n/g, '<br>')
+      .replace(/<br>\s*\d+\.\s+/g, '<br><br>$&')
+      .replace(/<br>\s*[-*]\s+/g, '<br>• ');
+  }
+
+  async function callGemini(modelName, apiKey, prompt, imageData) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: 'image/jpeg', data: imageData } }
+            ]
+          }]
+        }),
+        signal: controller.signal
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.error?.message || 'Bağlantı hatası';
+        throw new Error(msg);
+      }
+
+      const text = data.candidates?.[0]?.content?.parts
+        ?.map(part => part.text)
+        ?.join('')
+        ?.trim();
+
+      if (!text) {
+        throw new Error('Yapay zekadan yanıt alınamadı.');
+      }
+
+      return text;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function solve(options = {}) {
+    const { promptOverride = null, resumed = false } = options;
+    if (solverRequestInFlight && !resumed) return;
+
+    const apiKey = keyInput.value.trim();
+    if (!apiKey) {
+      showErr('Lütfen API anahtarınızı girin.');
+      return;
+    }
+    if (!cleanBase64) {
+      showErr('Lütfen bir soru görseli seçin.');
+      return;
+    }
+
+    const exam = document.getElementById('exam').value;
+    const subject = document.getElementById('subject').value;
+    const modelNames = ['gemini-3.8-flash'];
+    const prompt = promptOverride || `Sen uzman bir ${exam} ${subject} öğretmenisin. Bu soruyu şu sırayla açıkla:
+1. Soru Analizi (Ne soruluyor?)
+2. Adım Adım Çözüm (Formül ve mantığı sade dille anlat, kesinlikle LaTeX kullanma)
+3. Doğru Cevap
+4. Sık Yapılan Hata ve İpucu`;
+
+    solverRequestInFlight = true;
+    saveSolverState({ inProgress: true, pendingPrompt: prompt, updatedAt: Date.now() });
+    syncSolveButtonState();
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').textContent = resumed ? 'Önceki çözüm kaldığı yerden devam ediyor...' : 'Yapay zeka soruyu inceliyor, lütfen bekleyin...';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('resultContainer').style.display = 'none';
+
+    let lastError = null;
+
+    try {
+      for (let attempt = 0; attempt < modelNames.length; attempt++) {
+        const modelName = modelNames[attempt];
+
+        try {
+          const text = await callGemini(modelName, apiKey, prompt, cleanBase64);
+          const htmlContent = formatResponseText(text);
+          document.getElementById('resultText').innerHTML = htmlContent;
+          document.getElementById('resultContainer').style.display = 'block';
+          saveSolverState({ inProgress: false, pendingPrompt: '', resultHtml: htmlContent, resultVisible: true, updatedAt: Date.now() });
+          return;
+        } catch (err) {
+          lastError = err;
+          const msg = err?.message || String(err);
+          if (msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('temporarily unavailable') || msg.toLowerCase().includes('429') || msg.toLowerCase().includes('timeout')) {
+            saveSolverState({ inProgress: true, pendingPrompt: prompt, updatedAt: Date.now() });
+            await sleep(15000);
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      throw lastError || new Error('Yapay zekadan yanıt alınamadı.');
+    } catch (err) {
+      const message = err?.message || String(err);
+      saveSolverState({ inProgress: false, pendingPrompt: '', updatedAt: Date.now() });
+      showErr('Hata: ' + message + ' Lütfen 10-20 saniye sonra tekrar deneyin.');
+    } finally {
+      solverRequestInFlight = false;
+      document.getElementById('loading').style.display = 'none';
+      syncSolveButtonState();
+    }
+  }
+
+  function resumePendingSolve() {
+    const saved = JSON.parse(localStorage.getItem(SOLVER_STORAGE_KEY) || 'null');
+    if (!saved || !saved.inProgress || !saved.pendingPrompt || !saved.imageBase64) return;
+    if (saved.apiKey) keyInput.value = saved.apiKey;
+    if (saved.exam) document.getElementById('exam').value = saved.exam;
+    if (saved.subject) document.getElementById('subject').value = saved.subject;
+    solve({ promptOverride: saved.pendingPrompt, resumed: true });
+  }
+
+  function showErr(msg) {
+    const errBox = document.getElementById('error');
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
+  }
+</script>
+
+</body>
+</html>

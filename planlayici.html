@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Haftalık Çalışma Programı — Akıllı Asistan</title>
+<style>
+  :root {
+    --hour-height: 64px;
+    --grid-start-hour: 6;
+    --grid-end-hour: 22;
+    --grid-total-hours: 17;
+    --grid-height: calc(var(--hour-height) * var(--grid-total-hours));
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body {
+    background: linear-gradient(180deg, #f3f6fb 0%, #eef3f8 100%);
+    min-height: 100vh;
+    display: block;
+    padding: 0;
+    color: #1f2937;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  body[data-theme="dark"] {
+    background: linear-gradient(180deg, #020817 0%, #0f172a 100%);
+    color: #e2e8f0;
+    color-scheme: dark;
+  }
+  .container {
+    position: relative;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    width: 100vw;
+    max-width: none;
+    border-radius: 0;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    padding: 20px 18px 30px;
+    margin: 0;
+  }
+
+  .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(148, 163, 184, 0.18); padding-bottom: 12px; flex-wrap: wrap; }
+  .nav-btn {
+    padding: 9px 16px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.7);
+    color: #475569;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  .nav-btn.active {
+    background: linear-gradient(135deg, #e0ecff, #dfe7ff);
+    color: #1e3a8a;
+    box-shadow: 0 8px 18px rgba(96, 165, 250, 0.14);
+  }
+  .nav-btn:hover { transform: translateY(-1px); opacity: 0.98; }
+
+  h1 { text-align: center; color: #0f172a; margin-bottom: 6px; font-size: 24px; }
+  p.sub { text-align: center; color: #64748b; font-size: 13px; margin-bottom: 20px; }
+
+  .box { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 16px; padding: 15px; margin-bottom: 20px; }
+  .planner-form { display: grid; grid-template-columns: 1fr 1fr 1fr 2.2fr 1fr; gap: 10px; align-items: end; }
+  .field-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field-group label { font-size: 11px; font-weight: 700; color: #cbd5e1; }
+  .field-wide { grid-column: span 1; }
+  select, input[type="text"], input[type="time"] {
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    background: rgba(15, 23, 42, 0.8);
+    width: 100%;
+    min-width: 0;
+    color: #e2e8f0;
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.35);
+  }
+  .action-wrap { display: flex; align-items: end; }
+  .action-btn {
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: white;
+    border: none;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+  }
+  .action-btn:hover { filter: brightness(1.04); }
+
+  .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 20px; }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 16px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  }
+  .stat-card span { display: block; font-size: 11px; color: #64748b; margin-bottom: 5px; }
+  .stat-card strong { font-size: 18px; color: #0f172a; }
+
+  .view-controls { display: none; }
+  .view-controls label { font-weight: 700; }
+  .view-controls select { padding: 8px 10px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; background: rgba(15, 23, 42, 0.9); min-width: 120px; color: #e2e8f0; }
+  .planner-history-toolbar { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+  .history-button, .current-week-button { border: 1px solid rgba(148,163,184,0.22); border-radius: 11px; padding: 9px 13px; background: rgba(37,99,235,0.1); color: inherit; font-weight: 700; cursor: pointer; }
+  .history-view-banner { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 12px; font-weight: 700; }
+  .history-view-banner[hidden] { display: none; }
+  .history-week-list { display: grid; gap: 9px; }
+  .history-week-button { width: 100%; padding: 13px 14px; border: 1px solid rgba(148,163,184,0.18); border-radius: 12px; background: rgba(148,163,184,0.08); color: inherit; text-align: left; cursor: pointer; font-weight: 700; }
+  .history-week-button:hover { border-color: #60a5fa; background: rgba(59,130,246,0.12); }
+  .history-week-button small { display: block; margin-top: 5px; color: #94a3b8; font-weight: 500; }
+  .history-empty { padding: 18px; border: 1px dashed rgba(148,163,184,0.28); border-radius: 12px; color: #94a3b8; line-height: 1.5; text-align: center; }
+  .history-readonly .task-item { cursor: default !important; }
+
+  .calendar-shell {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    overscroll-behavior-x: contain;
+  }
+  .time-rail {
+    flex: 0 0 72px;
+    width: 72px;
+    padding-top: 82px;
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 16px 0 0 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .time-slot {
+    height: var(--hour-height, 64px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 6px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  }
+  .schedule-grid { display: grid; gap: 10px; width: 100%; max-width: 100%; min-width: 0; flex: 1; }
+  .week-row { display: grid; gap: 10px; width: 100%; min-width: 0; }
+  .schedule-grid[data-layout="7"] .week-row { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
+  .schedule-grid[data-layout="52"] .week-row:first-child { grid-template-columns: repeat(5, minmax(140px, 1fr)); }
+  .schedule-grid[data-layout="52"] .week-row:last-child { grid-template-columns: repeat(2, minmax(160px, 1fr)); max-width: 360px; margin: 0 auto; }
+  .schedule-grid[data-layout="43"] .week-row:first-child { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+  .schedule-grid[data-layout="43"] .week-row:last-child { grid-template-columns: repeat(3, minmax(120px, 1fr)); max-width: 420px; margin: 0 auto; }
+  .day-column {
+    --day-grid-height: calc(var(--hour-height, 64px) * var(--grid-total-hours, 17));
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 16px;
+    padding: 10px;
+    min-height: var(--day-grid-height);
+    overflow: visible;
+    min-width: 0;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    position: relative;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .day-body {
+    position: relative;
+    height: var(--day-grid-height);
+    margin-top: 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .day-column.drag-target {
+    border-color: rgba(96, 165, 250, 0.8);
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.22), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .day-column.drag-surface {
+    transform: scale(1.01);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.12), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .day-header { position: sticky; top: 0; z-index: 5; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 4px; margin: -10px -10px 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.2); padding: 10px 10px 8px; background: rgba(255, 255, 255, 0.96); border-radius: 16px 16px 0 0; }
+  .day-column h3 { font-size: 13px; color: #0f172a; }
+  .day-header .day-date { font-size: 11px; color: #475569; font-weight: 700; letter-spacing: 0.02em; }
+  .day-header .day-time-tag { font-size: 10px; color: #64748b; }
+  .day-header span { font-size: 10px; color: #64748b; }
+
+  .empty-state { text-align: center; color: #64748b; font-size: 11px; margin-top: 18px; }
+  .task-item {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.9);
+    border-left: 6px solid #60a5fa;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    padding: 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    transition: width 0.18s ease, left 0.18s ease, top 0.18s ease, transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+    will-change: transform, width, left, top;
+  }
+  .task-item.is-dragging {
+    opacity: 0.45;
+    visibility: visible;
+    pointer-events: none;
+    filter: saturate(0.8);
+  }
+  .task-drag-ghost {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(96, 165, 250, 0.4);
+    opacity: 0.98;
+    transform-origin: center center;
+  }
+  .task-main { min-width: 0; }
+  .task-time { font-size: 10px; color: #475569; font-weight: 700; margin-bottom: 6px; }
+  .task-title { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 6px; line-height: 1.4; word-break: break-word; }
+  .category-tag { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; color: white; max-width: 100%; opacity: 0.9; }
+  .task-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: center; }
+  .task-editor label { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #cbd5e1; font-weight: 700; }
+  .task-editor input, .task-editor select { width: 100%; padding: 6px 7px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 7px; font-size: 11px; background: rgba(15, 23, 42, 0.8); color: #e2e8f0; }
+  .task-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .save-btn { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; border-radius: 7px; padding: 6px 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .task-card-btn { background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.2); color: #e2e8f0; border-radius: 7px; padding: 6px 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .remove-btn { display: none !important; }
+  .task-resize-handle {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 10px;
+    cursor: ns-resize;
+    background: linear-gradient(180deg, rgba(148,163,184,0.00), rgba(148,163,184,0.18));
+    border-top: 1px solid rgba(191, 219, 254, 0.16);
+    opacity: 0.12;
+    transition: opacity 0.18s ease;
+    pointer-events: auto;
+  }
+  .task-item:hover .task-resize-handle { opacity: 0.36; }
+  .task-item:active .task-resize-handle { opacity: 0.5; }
+  .help-box {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(30,41,59,0.96), rgba(15,23,42,0.8));
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    color: #dbeafe;
+    font-size: 12px;
+  }
+
+  .modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.7); display: flex; align-items: center; justify-content: center; z-index: 30; padding: 24px; }
+  .modal.hidden { display: none; }
+  .modal-card {
+    background: rgba(15, 23, 42, 0.96);
+    width: min(760px, 100%);
+    border-radius: 22px;
+    box-shadow: 0 30px 60px rgba(2, 6, 23, 0.45);
+    padding: 20px;
+    max-height: 80vh;
+    overflow: auto;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-header h2 { font-size: 18px; color: #f8fafc; }
+  .close-btn {
+    border: none;
+    background: rgba(148, 163, 184, 0.12);
+    color: #e2e8f0;
+    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    font-size: 22px;
+    cursor: pointer;
+  }
+  .day-task-list { display: grid; gap: 12px; }
+  .day-task-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(135deg, rgba(30,41,59,0.95), rgba(15,23,42,0.88));
+    cursor: pointer;
+  }
+  .day-task-item strong { display: block; font-size: 14px; margin-bottom: 4px; color: #f8fafc; }
+  .day-task-item small { color: #cbd5e1; }
+
+  .settings-panel {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    width: min(360px, calc(100vw - 24px));
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4);
+    padding: 18px;
+    z-index: 40;
+  }
+  .settings-panel.hidden { display: none; }
+  .settings-panel h3 { margin-bottom: 12px; color: #f8fafc; }
+  .settings-form { display: grid; gap: 12px; }
+  .settings-form label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; font-weight: 700; color: #cbd5e1; }
+  .settings-form input, .settings-form select { padding: 9px 10px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; font-size: 13px; background: rgba(15, 23, 42, 0.8); color: #e2e8f0; }
+  .settings-form input.color-value { display: none; }
+  .color-picker { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; padding: 4px 2px; }
+  .color-swatch {
+    position: relative;
+    width: 25px;
+    height: 25px;
+    justify-self: center;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .color-swatch:hover { transform: scale(1.14); }
+  .color-swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #3b82f6; }
+  .color-swatch:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .settings-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; }
+  .top-shell {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    width: fit-content;
+    max-width: min(100%, 360px);
+    z-index: 80;
+  }
+  .top-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+  }
+  .analysis-toggle,
+  .theme-toggle {
+    position: relative;
+    z-index: 60;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.8);
+    color: #f8fafc;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.22);
+    transition: transform 0.2s ease, filter 0.2s ease;
+  }
+  .analysis-toggle:hover,
+  .theme-toggle:hover { transform: translateY(-1px); filter: brightness(1.04); }
+  .analysis-toggle .label,
+  .theme-toggle .label { display: inline-flex; align-items: center; gap: 8px; }
+  body[data-theme="light"] .analysis-toggle,
+  body[data-theme="light"] .theme-toggle { background: rgba(255, 255, 255, 0.82); color: #0f172a; border-color: rgba(148, 163, 184, 0.28); }
+  .analysis-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: min(360px, calc(100vw - 28px));
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 22px 40px rgba(2, 6, 23, 0.35);
+    z-index: 81;
+    color: #e2e8f0;
+  }
+  .analysis-panel.hidden { display: none; }
+  .analysis-panel h3 { margin-bottom: 10px; font-size: 16px; }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(16px);
+    background: rgba(15, 23, 42, 0.96);
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.26);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 90;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.warning {
+    background: rgba(120, 53, 15, 0.95);
+    border-color: rgba(251, 146, 60, 0.42);
+    color: #fff7ed;
+  }
+  .analysis-summary {
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+    line-height: 1.55;
+    font-size: 13px;
+    color: #dbeafe;
+  }
+  .analysis-tips {
+    list-style: none;
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+  }
+  .analysis-tips li {
+    background: rgba(148, 163, 184, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 12px;
+    padding: 10px 12px;
+    line-height: 1.45;
+    font-size: 12.5px;
+    color: #dbeafe;
+  }
+  body[data-theme="light"] .analysis-panel {
+    background: rgba(255, 255, 255, 0.94);
+    color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.18);
+  }
+  body[data-theme="light"] .analysis-summary,
+  body[data-theme="light"] .analysis-tips li {
+    background: rgba(239, 246, 255, 0.7);
+    color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+  .analysis-toggle:hover { transform: translateY(-1px); filter: brightness(1.04); }
+  .theme-toggle:hover { transform: translateY(-1px); filter: brightness(1.04); }
+  .theme-toggle .label { display: inline-flex; align-items: center; gap: 8px; }
+  body[data-theme="light"] .theme-toggle { background: rgba(255, 255, 255, 0.82); color: #0f172a; border-color: rgba(148, 163, 184, 0.28); }
+  body[data-theme="dark"] .container,
+  body[data-theme="dark"] .day-column,
+  body[data-theme="dark"] .stat-card,
+  body[data-theme="dark"] .nav-btn,
+  body[data-theme="dark"] .task-item,
+  body[data-theme="dark"] .modal-card,
+  body[data-theme="dark"] .settings-panel,
+  body[data-theme="dark"] .help-box {
+    background: rgba(15, 23, 42, 0.78);
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.18);
+  }
+  body[data-theme="dark"] .task-item {
+    box-shadow: 0 10px 20px rgba(2, 6, 23, 0.28);
+  }
+  body[data-theme="dark"] .day-header { background: rgba(15, 23, 42, 0.98); }
+  body[data-theme="dark"] .task-time,
+  body[data-theme="dark"] .day-header .day-date,
+  body[data-theme="dark"] .stat-card span,
+  body[data-theme="dark"] .nav-btn,
+  body[data-theme="dark"] .time-slot,
+  body[data-theme="dark"] .day-time-tag,
+  body[data-theme="dark"] .empty-state,
+  body[data-theme="dark"] .task-editor label {
+    color: #cbd5e1;
+  }
+  body[data-theme="dark"] .task-title,
+  body[data-theme="dark"] .day-column h3,
+  body[data-theme="dark"] .stat-card strong,
+  body[data-theme="dark"] h1,
+  body[data-theme="dark"] .modal-header h2,
+  body[data-theme="dark"] .settings-panel h3 {
+    color: #f8fafc;
+  }
+  body[data-theme="dark"] .nav-btn.active {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.24));
+    color: #dbeafe;
+  }
+  body[data-theme="dark"] .time-rail {
+    background: rgba(15, 23, 42, 0.26);
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+  .primary-btn {
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.12);
+  }
+  .secondary-btn { background: rgba(148, 163, 184, 0.12); color: #e2e8f0; border: none; border-radius: 10px; padding: 9px 12px; font-weight: 700; cursor: pointer; }
+
+  @media (max-width: 640px) {
+    .calendar-shell { overflow-x: auto; }
+    .schedule-grid { min-width: 520px; }
+    .planner-form { grid-template-columns: 1fr 1fr; }
+    .field-wide { grid-column: span 2; }
+    .stats-bar { grid-template-columns: 1fr; }
+    .schedule-grid[data-layout="52"] .week-row:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .schedule-grid[data-layout="52"] .week-row:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .schedule-grid[data-layout="43"] .week-row:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .schedule-grid[data-layout="43"] .week-row:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .schedule-grid[data-layout="7"] .week-row { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+  }
+  @media (min-width: 641px) and (max-width: 1100px) {
+    .schedule-grid[data-layout="7"] .week-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body data-theme="light">
+<div id="toast" class="toast" aria-live="polite"></div>
+<div class="container">
+  <div class="nav-bar">
+    <a href="index.html" class="nav-btn">📐 Soru Çözücü</a>
+    <a href="planlayici.html" class="nav-btn active">📅 Haftalık Program</a>
+    <a href="notlar.html" class="nav-btn">📝 Notlar</a>
+    <a href="pomodoro.html" class="nav-btn">⏱️ Pomodoro</a>
+  </div>
+
+  <div class="top-shell">
+    <div class="top-actions">
+      <button type="button" id="analysisToggle" class="analysis-toggle" aria-label="Programı analiz et">
+        <span class="label"><span>🔍</span> <span>Analiz</span></span>
+      </button>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Tema değiştir">
+        <span class="label"><span id="themeIcon">🌙</span> <span id="themeText">Koyu</span></span>
+      </button>
+    </div>
+
+    <div id="analysisPanel" class="analysis-panel hidden" aria-live="polite">
+      <h3>Program Analizi</h3>
+      <div id="analysisSummary" class="analysis-summary"></div>
+      <ul id="analysisTips" class="analysis-tips"></ul>
+    </div>
+  </div>
+
+  <h1>Öğrenci Haftalık Programı</h1>
+  <p class="sub">Okul, ders çalışması, tekrar ve deneme düzenini tek ekranda yönet</p>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span>Toplam Etkinlik</span>
+      <strong id="totalPlans">0</strong>
+    </div>
+    <div class="stat-card">
+      <span>En Yoğun Gün</span>
+      <strong id="peakDay">-</strong>
+    </div>
+    <div class="stat-card">
+      <span>Haftalık Saat</span>
+      <strong id="totalHours">0</strong>
+    </div>
+  </div>
+
+  <div class="view-controls" aria-hidden="true">
+    <label for="plannerLayout">Görünüm</label>
+    <select id="plannerLayout">
+      <option value="43">4 + 3</option>
+      <option value="52">5 + 2</option>
+      <option value="7" selected>7 tek sıra</option>
+    </select>
+  </div>
+
+  <div class="planner-history-toolbar">
+    <button type="button" class="history-button" id="openHistoryBtn">📚 Geçmiş programlar</button>
+    <div id="historyViewBanner" class="history-view-banner" hidden>
+      <span id="historyViewLabel"></span>
+      <button type="button" class="current-week-button" id="returnCurrentWeekBtn">Güncel haftaya dön</button>
+    </div>
+  </div>
+  <div class="calendar-shell">
+    <div class="time-rail" id="timeRail"></div>
+    <div class="schedule-grid" id="scheduleGrid" data-layout="52"></div>
+  </div>
+</div>
+
+<div id="historyModal" class="modal hidden" aria-modal="true" aria-labelledby="historyModalTitle">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="historyModalTitle">Geçmiş Programlar</h2>
+      <button class="close-btn" id="closeHistoryModal" type="button" aria-label="Geçmiş listesini kapat">×</button>
+    </div>
+    <div id="historyWeekList" class="history-week-list"></div>
+  </div>
+</div>
+
+<div id="dayModal" class="modal hidden" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2 id="dayModalTitle">Gün görünümü</h2>
+      <button class="close-btn" id="closeDayModal" type="button">×</button>
+    </div>
+    <div id="dayModalContent" class="day-task-list"></div>
+  </div>
+</div>
+
+<div id="quickAddPanel" class="settings-panel hidden" aria-modal="true">
+  <div class="modal-header" style="margin-bottom: 12px;">
+    <h3 style="margin: 0;">Yeni Plan</h3>
+    <button class="close-btn" id="closeQuickAdd" type="button">×</button>
+  </div>
+  <div class="settings-form">
+    <label>
+      Gün
+      <input id="quickAddDay" type="text" readonly>
+    </label>
+    <label>
+      Başlık
+      <input id="quickAddTitle" type="text" placeholder="Örn: Matematik 15 soru çöz">
+    </label>
+    <label>
+      Başlangıç
+      <input id="quickAddStart" type="time" value="09:00">
+    </label>
+    <label>
+      Bitiş
+      <input id="quickAddEnd" type="time" value="10:30">
+    </label>
+    <label>
+      Renk
+      <input id="quickAddColor" class="color-value" type="hidden" value="#3b82f6">
+      <div id="quickAddColorPicker" class="color-picker" role="group" aria-label="Etkinlik rengi"></div>
+    </label>
+    <button type="button" id="saveQuickAddBtn" class="primary-btn">Planı Ekle</button>
+  </div>
+</div>
+
+<div id="taskSettingsPanel" class="settings-panel hidden" aria-modal="true">
+  <div class="modal-header" style="margin-bottom: 12px;">
+    <h3 style="margin: 0;">Etkinlik Ayarları</h3>
+    <button class="close-btn" id="closeTaskSettings" type="button">×</button>
+  </div>
+  <div class="settings-form">
+    <label>
+      Başlık
+      <input id="taskTitleInput" type="text">
+    </label>
+    <label>
+      Gün
+      <select id="taskDaySelect"></select>
+    </label>
+    <label>
+      Başlangıç
+      <input id="taskStartInput" type="time">
+    </label>
+    <label>
+      Bitiş
+      <input id="taskEndInput" type="time">
+    </label>
+    <label>
+      Renk
+      <input id="taskColorInput" class="color-value" type="hidden">
+      <div id="taskColorPicker" class="color-picker" role="group" aria-label="Etkinlik rengi"></div>
+    </label>
+    <div class="settings-actions">
+      <button type="button" id="deleteTaskBtn" class="secondary-btn">Sil</button>
+      <button type="button" id="saveTaskBtn" class="primary-btn">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const daysOfWeek = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  const HISTORY_STORAGE_KEY = 'weekly_tasks_history';
+  const WEEK_START_STORAGE_KEY = 'weekly_tasks_week_start';
+
+  function getWeekStartDate(date = new Date()) {
+    const monday = new Date(date);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    return monday;
+  }
+
+  function toDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function parseDateKey(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  let currentWeekStart = toDateKey(getWeekStartDate());
+  let viewingHistoryWeek = null;
+
+  function getCurrentWeekDates(weekStart = currentWeekStart) {
+    const monday = parseDateKey(weekStart);
+    return daysOfWeek.map((dayName, index) => {
+      const date = new Date(monday);
+      date.setDate(date.getDate() + index);
+      return {
+        dayName,
+        date,
+        shortDate: date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+        longDate: date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+      };
+    });
+  }
+
+  const categoryColors = {
+    Okul: '#60a5fa',
+    TYT: '#4f46e5',
+    AYT: '#ec4899',
+    Tekrar: '#10b981',
+    Deneme: '#f59e0b',
+    'Soru Çözümü': '#f97316',
+    Dinlenme: '#64748b',
+    Spor: '#22c55e',
+    Diğer: '#8b5cf6'
+  };
+
+  const taskColorOptions = {
+    '#ef4444': 'Kırmızı',
+    '#f97316': 'Turuncu',
+    '#f59e0b': 'Kehribar',
+    '#eab308': 'Sarı',
+    '#84cc16': 'Limon',
+    '#22c55e': 'Yeşil',
+    '#10b981': 'Zümrüt',
+    '#14b8a6': 'Turkuaz',
+    '#06b6d4': 'Camgöbeği',
+    '#0ea5e9': 'Açık Mavi',
+    '#60a5fa': 'Gökyüzü Mavisi',
+    '#3b82f6': 'Mavi',
+    '#4f46e5': 'Koyu İndigo',
+    '#6366f1': 'İndigo',
+    '#8b5cf6': 'Mor',
+    '#a855f7': 'Eflatun',
+    '#d946ef': 'Fuşya',
+    '#ec4899': 'Pembe',
+    '#f43f5e': 'Gül',
+    '#64748b': 'Gri'
+  };
+
+  const defaultTasks = {
+    Pazartesi: [
+      { title: 'Okul / dersler', start: '08:00', end: '15:00', category: 'Okul' },
+      { title: 'TYT Matematik', start: '18:00', end: '19:30', category: 'TYT' },
+      { title: 'Türkçe tekrar', start: '20:00', end: '21:00', category: 'Tekrar' }
+    ],
+    Salı: [
+      { title: 'Okul / dersler', start: '08:00', end: '15:00', category: 'Okul' },
+      { title: 'AYT Fizik', start: '18:30', end: '20:00', category: 'AYT' },
+      { title: 'Konu tekrar', start: '20:15', end: '21:00', category: 'Tekrar' }
+    ],
+    Çarşamba: [
+      { title: 'Okul / dersler', start: '08:00', end: '15:00', category: 'Okul' },
+      { title: 'Deneme sınavı', start: '19:00', end: '20:45', category: 'Deneme' },
+      { title: 'Soru çözümü', start: '21:00', end: '22:00', category: 'Soru Çözümü' }
+    ],
+    Perşembe: [
+      { title: 'Okul / dersler', start: '08:00', end: '15:00', category: 'Okul' },
+      { title: 'Geometri', start: '18:00', end: '19:15', category: 'TYT' },
+      { title: 'Biyoloji', start: '20:00', end: '21:00', category: 'AYT' }
+    ],
+    Cuma: [
+      { title: 'Okul / dersler', start: '08:00', end: '14:00', category: 'Okul' },
+      { title: 'AYT Matematik', start: '18:30', end: '20:00', category: 'AYT' },
+      { title: 'Dinlenme', start: '20:15', end: '21:00', category: 'Dinlenme' }
+    ],
+    Cumartesi: [
+      { title: 'Deneme çözümü', start: '09:00', end: '11:00', category: 'Deneme' },
+      { title: 'Konu tekrar', start: '14:00', end: '15:30', category: 'Tekrar' },
+      { title: 'Spor / hareket', start: '18:00', end: '19:00', category: 'Spor' }
+    ],
+    Pazar: [
+      { title: 'Haftalık değerlendirme', start: '10:00', end: '11:30', category: 'Tekrar' },
+      { title: 'Planlama ve eksik konu', start: '15:00', end: '16:30', category: 'Soru Çözümü' },
+      { title: 'Dinlenme', start: '21:00', end: '22:00', category: 'Dinlenme' }
+    ]
+  };
+
+  const layoutPatterns = {
+    '43': [
+      ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe'],
+      ['Cuma', 'Cumartesi', 'Pazar']
+    ],
+    '52': [
+      ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
+      ['Cumartesi', 'Pazar']
+    ],
+    '7': [
+      ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
+    ]
+  };
+
+  function generateTaskId() {
+    return `task-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  }
+
+  function normalizeTaskItem(item, fallbackTitle = 'Yeni plan') {
+    if (typeof item === 'string') {
+      return { id: generateTaskId(), title: item, start: '09:00', end: '10:00', category: 'Diğer', color: '#64748b' };
+    }
+
+    const category = item?.category || 'Diğer';
+    return {
+      id: item?.id || generateTaskId(),
+      title: item?.title || fallbackTitle,
+      start: item?.start || '09:00',
+      end: item?.end || '10:00',
+      category,
+      color: item?.color || categoryColors[category] || '#6366f1'
+    };
+  }
+
+  function normalizeWeeklyTasks(raw) {
+    const base = {};
+    daysOfWeek.forEach(day => {
+      const dayTasks = Array.isArray(raw?.[day]) ? raw[day] : [];
+      base[day] = dayTasks.map((item, index) => normalizeTaskItem(item, `Plan ${index + 1}`));
+    });
+    return base;
+  }
+
+  const savedTasks = localStorage.getItem('weekly_tasks');
+  let weeklyTasks = JSON.parse(JSON.stringify(defaultTasks));
+
+  if (savedTasks) {
+    try {
+      const parsed = JSON.parse(savedTasks);
+      weeklyTasks = normalizeWeeklyTasks(parsed);
+    } catch (error) {
+      weeklyTasks = JSON.parse(JSON.stringify(defaultTasks));
+    }
+  }
+
+  let weeklyHistory = [];
+  try {
+    const savedHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+    if (Array.isArray(savedHistory)) {
+      weeklyHistory = savedHistory
+        .filter((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry?.weekStart))
+        .map((entry) => ({ weekStart: entry.weekStart, tasks: normalizeWeeklyTasks(entry.tasks) }));
+    }
+  } catch (error) {
+    console.error('Geçmiş programlar yüklenemedi:', error);
+  }
+
+  const savedWeekStart = localStorage.getItem(WEEK_START_STORAGE_KEY);
+  if (savedWeekStart && savedWeekStart < currentWeekStart) {
+    if (!weeklyHistory.some((entry) => entry.weekStart === savedWeekStart)) {
+      weeklyHistory.push({ weekStart: savedWeekStart, tasks: normalizeWeeklyTasks(weeklyTasks) });
+      weeklyHistory.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(weeklyHistory));
+    }
+    localStorage.setItem(WEEK_START_STORAGE_KEY, currentWeekStart);
+  } else if (!savedWeekStart) {
+    localStorage.setItem(WEEK_START_STORAGE_KEY, currentWeekStart);
+  }
+
+  function syncWeekStart() {
+    const actualWeekStart = toDateKey(getWeekStartDate());
+    if (actualWeekStart <= currentWeekStart) return false;
+
+    if (!weeklyHistory.some((entry) => entry.weekStart === currentWeekStart)) {
+      weeklyHistory.push({ weekStart: currentWeekStart, tasks: normalizeWeeklyTasks(weeklyTasks) });
+      weeklyHistory.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(weeklyHistory));
+    }
+    currentWeekStart = actualWeekStart;
+    localStorage.setItem(WEEK_START_STORAGE_KEY, currentWeekStart);
+    return true;
+  }
+
+  function setColorPickerValue(input, color) {
+    input.value = color;
+    const picker = document.getElementById(input.id === 'quickAddColor' ? 'quickAddColorPicker' : 'taskColorPicker');
+    picker.querySelectorAll('.color-swatch').forEach((swatch) => {
+      swatch.setAttribute('aria-pressed', String(swatch.dataset.color === color));
+    });
+  }
+
+  [['quickAddColor', 'quickAddColorPicker'], ['taskColorInput', 'taskColorPicker']].forEach(([inputId, pickerId]) => {
+    const colorInput = document.getElementById(inputId);
+    const picker = document.getElementById(pickerId);
+    Object.entries(taskColorOptions).forEach(([color, name]) => {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'color-swatch';
+      swatch.style.backgroundColor = color;
+      swatch.dataset.color = color;
+      swatch.setAttribute('aria-label', name);
+      swatch.setAttribute('aria-pressed', 'false');
+      swatch.addEventListener('click', () => setColorPickerValue(colorInput, color));
+      picker.appendChild(swatch);
+    });
+  });
+  setColorPickerValue(document.getElementById('quickAddColor'), '#3b82f6');
+
+  localStorage.setItem('weekly_tasks', JSON.stringify(weeklyTasks));
+
+  function getDisplayedTasks() {
+    return viewingHistoryWeek ? viewingHistoryWeek.tasks : weeklyTasks;
+  }
+
+  function formatWeekRange(weekStart) {
+    const dates = getCurrentWeekDates(weekStart);
+    if (!dates.length) return weekStart;
+    return `${dates[0].date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} – ${dates[6].date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  }
+
+  function renderHistoryList() {
+    const list = document.getElementById('historyWeekList');
+    list.replaceChildren();
+    if (!weeklyHistory.length) {
+      const empty = document.createElement('div');
+      empty.className = 'history-empty';
+      empty.textContent = 'Henüz kaydedilmiş geçmiş hafta yok. Haftalar değiştikçe programlar burada saklanacak.';
+      list.appendChild(empty);
+      return;
+    }
+
+    weeklyHistory.forEach((entry) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'history-week-button';
+      const total = Object.values(entry.tasks).flat().length;
+      button.append(document.createTextNode(`📅 ${formatWeekRange(entry.weekStart)}`));
+      const details = document.createElement('small');
+      details.textContent = `${total} plan · Salt okunur`;
+      button.appendChild(details);
+      button.addEventListener('click', () => {
+        viewingHistoryWeek = entry;
+        document.getElementById('historyModal').classList.add('hidden');
+        renderPlanner();
+      });
+      list.appendChild(button);
+    });
+  }
+
+  function timeToMinutes(time) {
+    if (!time) return 0;
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function minutesToTime(totalMinutes) {
+    const safeMinutes = Math.max(0, totalMinutes);
+    const hours = Math.floor(safeMinutes / 60);
+    const minutes = safeMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  function hexToRgba(hex, alpha = 1) {
+    const clean = hex.replace('#', '');
+    const value = clean.length === 3
+      ? clean.split('').map(ch => ch + ch).join('')
+      : clean;
+    const num = Number.parseInt(value, 16);
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function formatTimeRange(start, end) {
+    return `${start} - ${end}`;
+  }
+
+  function sortDayTasks(dayTasks) {
+    return [...dayTasks].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+  }
+
+  function persistTasks() {
+    localStorage.setItem('weekly_tasks', JSON.stringify(weeklyTasks));
+    localStorage.setItem(WEEK_START_STORAGE_KEY, currentWeekStart);
+  }
+
+  function updateStats(tasks = getDisplayedTasks()) {
+    const allTasks = Object.values(tasks).flat();
+    const totalPlans = allTasks.length;
+    const totalMinutes = allTasks.reduce((sum, item) => sum + Math.max(timeToMinutes(item.end) - timeToMinutes(item.start), 0), 0);
+
+    const counts = daysOfWeek.map(day => ({ day, count: (tasks[day] || []).length }));
+    const peak = counts.sort((a, b) => b.count - a.count)[0];
+
+    document.getElementById('totalPlans').textContent = totalPlans;
+    document.getElementById('peakDay').textContent = peak && peak.count > 0 ? peak.day : 'Yok';
+    document.getElementById('totalHours').textContent = `${Math.round(totalMinutes / 60)}h`;
+  }
+
+  function analyzePlanner(tasksByDay = getDisplayedTasks()) {
+    const daySummary = daysOfWeek.map((day) => {
+      const tasks = sortDayTasks(tasksByDay[day] || []);
+      const totalMinutes = tasks.reduce((sum, task) => sum + Math.max(timeToMinutes(task.end) - timeToMinutes(task.start), 0), 0);
+      return { day, tasks, totalMinutes };
+    });
+
+    const totalMinutes = daySummary.reduce((sum, item) => sum + item.totalMinutes, 0);
+    const busiestDay = [...daySummary].sort((a, b) => b.totalMinutes - a.totalMinutes)[0];
+    const overloadedDays = daySummary.filter((item) => item.totalMinutes >= 8 * 60);
+    const lowDays = daySummary.filter((item) => item.totalMinutes <= 2 * 60);
+    const longGapDays = daySummary.filter((item) => {
+      const tasks = item.tasks;
+      if (tasks.length < 2) return false;
+      return tasks.some((task, index) => {
+        if (index === tasks.length - 1) return false;
+        const currentEnd = timeToMinutes(task.end);
+        const nextStart = timeToMinutes(tasks[index + 1].start);
+        return nextStart - currentEnd >= 90;
+      });
+    });
+
+    const summaryParts = [];
+    summaryParts.push(`Hafta içi toplam çalışma süresi: ${Math.round(totalMinutes / 60)} saat.`);
+    summaryParts.push(busiestDay ? `En yoğun gün: ${busiestDay.day} (${Math.round(busiestDay.totalMinutes / 60)} saat).` : 'Daha dengeli bir program için gün ekleyebilirsiniz.');
+
+    const suggestions = [];
+    if (overloadedDays.length > 0) {
+      suggestions.push(`${overloadedDays.map((item) => item.day).join(', ')} günleri biraz ağır görünüyor. Bu günlerden birinde 30-60 dakika azaltıp dinlenme ekleyin.`);
+    }
+    if (lowDays.length > 0) {
+      suggestions.push(`${lowDays.map((item) => item.day).join(', ')} günleri hafif kalabilir. Bu günlerde bir tekrar veya soru çözümü ekleyerek dengenizi artırabilirsiniz.`);
+    }
+    if (longGapDays.length > 0) {
+      suggestions.push('Bazı aralıklarda boşluk var. Bu boşlukları tekrar, kısa deneme veya kısa tekrar için kullanabilirsiniz.');
+    }
+    if (!suggestions.length) {
+      suggestions.push('Program genel olarak dengeli görünüyor. Sadece son 2 günde hafif bir toparlama bölümü eklemek faydalı olabilir.');
+    }
+
+    const summaryText = summaryParts.join(' ');
+    document.getElementById('analysisSummary').textContent = summaryText;
+    const list = document.getElementById('analysisTips');
+    list.innerHTML = suggestions.map((tip) => `<li>${tip}</li>`).join('');
+  }
+
+  function getTaskDuration(task) {
+    return Math.max(timeToMinutes(task.end) - timeToMinutes(task.start), 30);
+  }
+
+  function getTaskHeight(task) {
+    const minutes = getTaskDuration(task);
+    return Math.max(70, Math.min(220, minutes * 1.35));
+  }
+
+  function getTaskById(day, taskId) {
+    return (weeklyTasks[day] || []).find(item => item.id === taskId) || null;
+  }
+
+  function getScheduleBounds() {
+    return {
+      startHour: 6,
+      endHour: 22,
+      hourHeight: 64,
+      minuteHeight: 64 / 60
+    };
+  }
+
+  function minutesToPixels(minutes, startHour = 6) {
+    const { startHour: scheduleStartHour, endHour, hourHeight } = getScheduleBounds();
+    const effectiveStartHour = startHour ?? scheduleStartHour;
+    const relativeMinutes = minutes - effectiveStartHour * 60;
+    const scheduleHeight = (endHour - effectiveStartHour) * hourHeight;
+    const ratio = Math.min(Math.max(relativeMinutes / Math.max((endHour - effectiveStartHour) * 60, 1), 0), 1);
+    return ratio * scheduleHeight;
+  }
+
+  function clampMinutesToSchedule(minutes) {
+    const { startHour, endHour } = getScheduleBounds();
+    const min = startHour * 60;
+    const max = endHour * 60;
+    return Math.min(Math.max(minutes, min), max);
+  }
+
+  function getTimeFromPointerY(clientY, day) {
+    const column = document.querySelector(`.day-column[data-day="${CSS.escape(day)}"]`);
+    const body = column?.querySelector('.day-body');
+    if (!body) return null;
+
+    const rect = body.getBoundingClientRect();
+    const { startHour, endHour, hourHeight } = getScheduleBounds();
+    const scheduleHeight = (endHour - startHour) * hourHeight;
+    const insideY = Math.min(Math.max(clientY - rect.top, 0), scheduleHeight);
+    const totalMinutes = (endHour - startHour) * 60;
+    const minutesFromStart = (insideY / Math.max(scheduleHeight, 1)) * totalMinutes;
+    const snappedMinutes = Math.round(minutesFromStart / 15) * 15;
+    return clampMinutesToSchedule(startHour * 60 + snappedMinutes);
+  }
+
+  function showToast(message, variant = 'warning') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.remove('show', 'warning');
+    toast.classList.add(variant === 'warning' ? 'warning' : '');
+    toast.classList.add('show');
+    clearTimeout(showToast.timerId);
+    showToast.timerId = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 1800);
+  }
+
+  function hasOverlap(day, taskId, startMinutes, endMinutes) {
+    const tasks = (weeklyTasks[day] || []).filter((item) => item.id !== taskId);
+    return tasks.some((task) => {
+      const taskStart = timeToMinutes(task.start);
+      const taskEnd = timeToMinutes(task.end);
+      return startMinutes < taskEnd && taskStart < endMinutes;
+    });
+  }
+
+  function tasksOverlap(a, b) {
+    const startA = timeToMinutes(a.start);
+    const endA = timeToMinutes(a.end);
+    const startB = timeToMinutes(b.start);
+    const endB = timeToMinutes(b.end);
+    return startA < endB && startB < endA;
+  }
+
+  function getTaskLaneData(dayTasks) {
+    const sorted = sortDayTasks(dayTasks);
+    const result = new Map();
+    if (!sorted.length) return result;
+
+    let cluster = [];
+    let clusterEnd = -1;
+    const saveCluster = () => {
+      if (!cluster.length) return;
+      const laneEndTimes = [];
+      const assignments = cluster.map((task) => {
+        const startMinutes = timeToMinutes(task.start);
+        let laneIndex = laneEndTimes.findIndex((endTime) => startMinutes >= endTime);
+        if (laneIndex === -1) laneIndex = laneEndTimes.length;
+        laneEndTimes[laneIndex] = timeToMinutes(task.end);
+        return { task, laneIndex };
+      });
+      const laneCount = Math.max(1, laneEndTimes.length);
+      assignments.forEach(({ task, laneIndex }) => result.set(task.id, { laneIndex, laneCount }));
+      cluster = [];
+      clusterEnd = -1;
+    };
+
+    sorted.forEach((task) => {
+      const startMinutes = timeToMinutes(task.start);
+      if (cluster.length && startMinutes >= clusterEnd) saveCluster();
+      cluster.push(task);
+      clusterEnd = Math.max(clusterEnd, timeToMinutes(task.end));
+    });
+    saveCluster();
+
+    return result;
+  }
+
+  let dragState = null;
+  let resizeState = null;
+
+  function clearDragGhosts() {
+    document.querySelectorAll('.task-drag-ghost').forEach((ghost) => ghost.remove());
+  }
+
+  function updateDragPreviewText(element, startMinutes, durationMinutes) {
+    if (!element) return;
+    const timeEl = element.querySelector('.task-time');
+    if (!timeEl) return;
+    const start = minutesToTime(startMinutes);
+    const end = minutesToTime(startMinutes + durationMinutes);
+    timeEl.textContent = formatTimeRange(start, end);
+  }
+
+  function startTaskResize(event, day, taskId) {
+    if (viewingHistoryWeek) return;
+    const task = getTaskById(day, taskId);
+    if (!task) return;
+
+    resizeState = {
+      day,
+      taskId,
+      startY: event.clientY,
+      initialEnd: timeToMinutes(task.end),
+      minEnd: timeToMinutes(task.start) + 30
+    };
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  window.addEventListener('pointermove', (event) => {
+    if (resizeState) {
+      const { minuteHeight } = getScheduleBounds();
+      const deltaMinutes = Math.round((event.clientY - resizeState.startY) / minuteHeight);
+      const nextEnd = resizeState.initialEnd + deltaMinutes;
+      const clampedEnd = Math.max(resizeState.minEnd, nextEnd);
+      const task = getTaskById(resizeState.day, resizeState.taskId);
+
+      if (!task) return;
+      if (timeToMinutes(task.end) === clampedEnd) return;
+
+      task.end = minutesToTime(clampedEnd);
+      persistTasks();
+      renderPlanner();
+      return;
+    }
+
+    if (!dragState) return;
+
+    const dx = event.clientX - dragState.startX;
+    const dy = event.clientY - dragState.startY;
+    const distance = Math.hypot(dx, dy);
+    const now = performance.now();
+    const deltaMs = Math.max(16, now - (dragState.lastMoveAt || now));
+    const velocity = distance / deltaMs;
+    const hoveredColumn = document.elementFromPoint(event.clientX, event.clientY)?.closest('.day-column')
+      || Array.from(document.querySelectorAll('.day-column')).find((col) => {
+          const rect = col.getBoundingClientRect();
+          return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+        });
+    dragState.hoverDay = hoveredColumn?.dataset.day || dragState.day;
+    if (!hoveredColumn && dragState.hoverDay !== dragState.day) {
+      dragState.hoverDay = dragState.day;
+    }
+    dragState.moved = dragState.moved || distance > 6;
+    dragState.lastMoveAt = now;
+    dragState.velocity = velocity;
+
+    document.querySelectorAll('.day-column').forEach((col) => {
+      col.classList.add('drag-surface');
+      col.classList.toggle('drag-target', col.dataset.day === dragState.hoverDay && dragState.hoverDay !== dragState.day);
+    });
+
+    if (dragState.element) {
+      const task = getTaskById(dragState.day, dragState.taskId);
+      if (task) {
+        const durationMinutes = Math.max(timeToMinutes(task.end) - timeToMinutes(task.start), 30);
+
+        if (dragState.hoverDay === dragState.day) {
+          const nextStartMinutes = getTimeFromPointerY(event.clientY, dragState.day);
+          const maxStartMinutes = Math.max(6 * 60, 22 * 60 - durationMinutes);
+
+          if (nextStartMinutes != null) {
+            const safeStartMinutes = Math.min(Math.max(nextStartMinutes, 6 * 60), maxStartMinutes);
+            const previewTop = Math.max(0, Math.min(minutesToPixels(safeStartMinutes, 6), (22 - 6) * 64 - 70));
+            dragState.element.style.transition = 'top 0.14s ease, transform 0.14s ease, opacity 0.14s ease, filter 0.14s ease';
+            dragState.element.style.top = `${previewTop}px`;
+            dragState.element.style.zIndex = '40';
+            dragState.element.style.transform = `translate(${dx * 0.08}px, ${dy * 0.08}px)`;
+            dragState.element.style.opacity = '0.9';
+            dragState.element.style.filter = 'saturate(1.05) drop-shadow(0 10px 18px rgba(59,130,246,0.15))';
+            updateDragPreviewText(dragState.element, safeStartMinutes, durationMinutes);
+            return;
+          }
+        }
+      }
+
+      dragState.element.style.transition = 'top 0.14s ease, transform 0.14s ease, opacity 0.18s ease, filter 0.18s ease';
+      const targetColumn = document.querySelector(`.day-column[data-day="${CSS.escape(dragState.hoverDay)}"] .day-body`);
+      if (dragState.hoverDay !== dragState.day && targetColumn) {
+        const fromRect = dragState.element.getBoundingClientRect();
+        const targetRect = targetColumn.getBoundingClientRect();
+        const driftX = ((targetRect.left + targetRect.width / 2) - (fromRect.left + fromRect.width / 2)) * 0.2;
+        const driftY = ((targetRect.top + targetRect.height / 2) - (fromRect.top + fromRect.height / 2)) * 0.18;
+        dragState.element.style.transform = `translate(${driftX}px, ${driftY}px)`;
+        dragState.element.style.opacity = '0.8';
+        dragState.element.style.filter = 'saturate(1.04)';
+      } else {
+        const previewX = dx * 0.18;
+        const previewY = dy * 0.18;
+        dragState.element.style.transform = `translate(${previewX}px, ${previewY}px)`;
+        dragState.element.style.opacity = '0.45';
+        dragState.element.style.filter = 'saturate(0.8)';
+      }
+      dragState.element.style.zIndex = '40';
+      dragState.element.style.top = dragState.element.dataset.baseTop || dragState.element.style.top || '0px';
+    }
+  });
+
+  window.addEventListener('pointerup', (event) => {
+    if (resizeState) {
+      resizeState = null;
+      return;
+    }
+
+    if (!dragState) return;
+
+    const { day, taskId, hoverDay, moved, element, pointerId } = dragState;
+    clearDragGhosts();
+    document.querySelectorAll('.day-column').forEach((col) => {
+      col.classList.remove('drag-target');
+      col.classList.remove('drag-surface');
+    });
+    document.body.style.userSelect = '';
+    document.body.style.cursor = 'auto';
+    document.documentElement.style.cursor = 'auto';
+
+    if (pointerId != null && element && element.hasPointerCapture && element.hasPointerCapture(pointerId)) {
+      element.releasePointerCapture(pointerId);
+    }
+
+    if (element) {
+      element.style.visibility = '';
+      element.style.pointerEvents = '';
+      element.style.transform = '';
+      element.style.opacity = '';
+      element.style.filter = '';
+      element.style.zIndex = '';
+      element.style.transition = 'top 0.14s ease, left 0.14s ease, width 0.18s ease, transform 0.14s ease';
+      element.classList.remove('is-dragging');
+    }
+
+    if (moved && hoverDay && hoverDay !== day) {
+      const task = getTaskById(day, taskId);
+      if (task) {
+        const candidateDuration = Math.max(timeToMinutes(task.end) - timeToMinutes(task.start), 30);
+        const taskStart = timeToMinutes(task.start);
+        const taskEnd = timeToMinutes(task.end);
+        if (hasOverlap(hoverDay, taskId, taskStart, taskEnd)) {
+          showToast('Uyarı: Hedef günde bu saat aralığı başka bir aktivite çakışıyor.');
+        }
+      }
+
+      if (element) {
+        const targetColumn = document.querySelector(`.day-column[data-day="${CSS.escape(hoverDay)}"] .day-body`);
+        if (targetColumn) {
+          const fromRect = element.getBoundingClientRect();
+          const targetRect = targetColumn.getBoundingClientRect();
+          const deltaX = (targetRect.left + targetRect.width / 2) - (fromRect.left + fromRect.width / 2);
+          const deltaY = (targetRect.top + targetRect.height / 2) - (fromRect.top + fromRect.height / 2);
+          element.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease, filter 0.18s ease';
+          element.style.transform = `translate(${deltaX * 0.18}px, ${deltaY * 0.18}px) scale(0.99)`;
+          element.style.opacity = '0.82';
+          element.style.filter = 'saturate(1.05)';
+          element.style.zIndex = '50';
+        }
+      }
+
+      setTimeout(() => {
+        moveTaskToDay(day, taskId, hoverDay);
+      }, 180);
+    } else if (moved && hoverDay && hoverDay === day) {
+      const task = getTaskById(day, taskId);
+      if (!task) {
+        dragState = null;
+        return;
+      }
+
+      const durationMinutes = Math.max(timeToMinutes(task.end) - timeToMinutes(task.start), 30);
+      const nextStartMinutes = getTimeFromPointerY(event.clientY, day);
+      if (nextStartMinutes == null) {
+        dragState = null;
+        return;
+      }
+
+      const maxStartMinutes = Math.max(6 * 60, 22 * 60 - durationMinutes);
+      const safeStartMinutes = Math.min(Math.max(nextStartMinutes, 6 * 60), maxStartMinutes);
+      const safeEndMinutes = safeStartMinutes + durationMinutes;
+
+      if (hasOverlap(day, taskId, safeStartMinutes, safeEndMinutes)) {
+        showToast('Uyarı: Bu saat aralığı başka bir planla çakışıyor.');
+      }
+
+      const finalTop = Math.max(0, Math.min(minutesToPixels(safeStartMinutes, 6), (22 - 6) * 64 - 70));
+      if (element) {
+        element.style.transition = 'top 0.20s ease, transform 0.20s ease, opacity 0.20s ease, filter 0.20s ease';
+        element.style.top = `${finalTop}px`;
+        element.style.transform = 'translate(0, 0)';
+        element.style.opacity = '1';
+        element.style.filter = 'none';
+        updateDragPreviewText(element, safeStartMinutes, durationMinutes);
+      }
+
+      task.start = minutesToTime(safeStartMinutes);
+      task.end = minutesToTime(safeEndMinutes);
+      task.day = day;
+      persistTasks();
+      setTimeout(() => {
+        renderPlanner();
+      }, 150);
+    } else if (!moved) {
+      openTaskSettings(day, taskId);
+    }
+
+    dragState = null;
+  });
+
+  window.addEventListener('pointercancel', () => {
+    dragState = null;
+    document.querySelectorAll('.day-column').forEach((col) => {
+      col.classList.remove('drag-target');
+      col.classList.remove('drag-surface');
+    });
+  });
+
+  function moveTaskToDay(fromDay, taskId, toDay) {
+    const task = getTaskById(fromDay, taskId);
+    if (!task || !weeklyTasks[toDay]) return;
+
+    weeklyTasks[fromDay] = (weeklyTasks[fromDay] || []).filter((item) => item.id !== taskId);
+    weeklyTasks[toDay] = weeklyTasks[toDay] || [];
+    weeklyTasks[toDay].push({ ...task, id: task.id });
+    persistTasks();
+    renderPlanner();
+  }
+
+  function startTaskDrag(event, day, taskId) {
+    if (viewingHistoryWeek) return;
+    if (event.target.closest('.task-resize-handle')) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    dragState = {
+      day,
+      taskId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      hoverDay: day,
+      moved: false,
+      lastMoveAt: performance.now(),
+      element: event.currentTarget,
+      pointerId: event.pointerId
+    };
+
+    clearDragGhosts();
+    const el = event.currentTarget;
+    if (el) {
+      el.dataset.baseTop = getComputedStyle(el).top;
+    }
+    if (el && typeof el.setPointerCapture === 'function' && event.pointerId != null) {
+      try {
+        el.setPointerCapture(event.pointerId);
+      } catch (error) {
+        // Pointer capture may fail in edge-case drag sequences; the drag should continue without it.
+      }
+    }
+    el.style.visibility = 'visible';
+    el.style.pointerEvents = 'none';
+    el.classList.add('is-dragging');
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'auto';
+    document.documentElement.style.cursor = 'auto';
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function openQuickAdd(day) {
+    if (viewingHistoryWeek) return;
+    const panel = document.getElementById('quickAddPanel');
+    const dayInput = document.getElementById('quickAddDay');
+    const titleInput = document.getElementById('quickAddTitle');
+    const startInput = document.getElementById('quickAddStart');
+    const endInput = document.getElementById('quickAddEnd');
+
+    dayInput.value = day;
+    titleInput.value = '';
+    startInput.value = '09:00';
+    endInput.value = '10:30';
+    setColorPickerValue(document.getElementById('quickAddColor'), '#3b82f6');
+    panel.dataset.day = day;
+    panel.classList.remove('hidden');
+  }
+
+  function openQuickAddAtPointer(day, clientY) {
+    if (viewingHistoryWeek) return;
+    openQuickAdd(day);
+    const pointerMinutes = getTimeFromPointerY(clientY, day);
+    if (pointerMinutes == null) return;
+
+    const { endHour } = getScheduleBounds();
+    const startMinutes = Math.min(pointerMinutes, endHour * 60 - 15);
+    const endMinutes = Math.min(startMinutes + 90, endHour * 60);
+    document.getElementById('quickAddStart').value = minutesToTime(startMinutes);
+    document.getElementById('quickAddEnd').value = minutesToTime(endMinutes);
+  }
+
+  function openDayDetail(day) {
+    if (viewingHistoryWeek) return;
+    const modal = document.getElementById('dayModal');
+    const content = document.getElementById('dayModalContent');
+    const title = document.getElementById('dayModalTitle');
+    title.textContent = `${day} planları`;
+
+    const tasks = sortDayTasks(weeklyTasks[day] || []);
+    content.innerHTML = '';
+
+    if (!tasks.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'Bu günde plan yok.';
+      content.appendChild(empty);
+    } else {
+      tasks.forEach((task) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'day-task-item';
+        button.style.borderLeft = `5px solid ${task.color || categoryColors[task.category] || '#6366f1'}`;
+        button.innerHTML = `
+          <strong>${task.title}</strong>
+          <small>${task.start} - ${task.end}</small>
+        `;
+        button.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          openTaskSettings(day, task.id);
+        });
+        content.appendChild(button);
+      });
+    }
+
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'primary-btn';
+    addButton.style.marginTop = '12px';
+    addButton.textContent = 'Plan ekle';
+    addButton.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      openQuickAdd(day);
+    });
+    content.appendChild(addButton);
+
+    modal.classList.remove('hidden');
+  }
+
+  function openTaskSettings(day, taskId) {
+    if (viewingHistoryWeek) return;
+    const task = getTaskById(day, taskId);
+    if (!task) return;
+
+    const panel = document.getElementById('taskSettingsPanel');
+    const titleInput = document.getElementById('taskTitleInput');
+    const startInput = document.getElementById('taskStartInput');
+    const endInput = document.getElementById('taskEndInput');
+    const daySelect = document.getElementById('taskDaySelect');
+    const colorInput = document.getElementById('taskColorInput');
+    const deleteBtn = document.getElementById('deleteTaskBtn');
+    const saveBtn = document.getElementById('saveTaskBtn');
+
+    daySelect.innerHTML = daysOfWeek.map(d => `<option value="${d}" ${d === day ? 'selected' : ''}>${d}</option>`).join('');
+    titleInput.value = task.title;
+    startInput.value = task.start;
+    endInput.value = task.end;
+    setColorPickerValue(colorInput, task.color || categoryColors[task.category] || '#6366f1');
+    panel.dataset.day = day;
+    panel.dataset.taskId = taskId;
+
+    deleteBtn.onclick = () => {
+      removeTask(day, taskId);
+      panel.classList.add('hidden');
+    };
+
+    saveBtn.onclick = () => {
+      const nextTitle = titleInput.value.trim();
+      const nextStart = startInput.value;
+      const nextEnd = endInput.value;
+      const nextDay = daySelect.value;
+      const nextColor = colorInput.value;
+
+      if (!nextTitle) {
+        alert('Plan başlığı boş olamaz.');
+        return;
+      }
+      if (timeToMinutes(nextEnd) <= timeToMinutes(nextStart)) {
+        alert('Bitiş saati başlangıçtan sonra olmalıdır.');
+        return;
+      }
+
+      updateTask(day, taskId, {
+        title: nextTitle,
+        start: nextStart,
+        end: nextEnd,
+        day: nextDay,
+        category: task.category,
+        color: nextColor
+      });
+      panel.classList.add('hidden');
+    };
+
+    panel.classList.remove('hidden');
+  }
+
+  function updateTask(day, taskId, updates) {
+    if (viewingHistoryWeek) return;
+    if (!weeklyTasks[day]) return;
+    const task = weeklyTasks[day].find(item => item.id === taskId);
+    if (!task) return;
+
+    const start = updates.start || task.start;
+    const end = updates.end || task.end;
+    if (timeToMinutes(end) <= timeToMinutes(start)) {
+      alert('Bitiş saati başlangıçtan sonra olmalıdır.');
+      return;
+    }
+
+    const updatedTask = { ...task, title: updates.title || task.title, start, end, category: updates.category || task.category, color: updates.color || task.color || categoryColors[task.category] || '#6366f1' };
+
+    if (updates.day && updates.day !== day) {
+      weeklyTasks[day] = weeklyTasks[day].filter(item => item.id !== taskId);
+      if (!weeklyTasks[updates.day]) weeklyTasks[updates.day] = [];
+      weeklyTasks[updates.day].push(updatedTask);
+      persistTasks();
+      renderPlanner();
+      return;
+    }
+
+    task.title = updatedTask.title;
+    task.start = updatedTask.start;
+    task.end = updatedTask.end;
+    task.category = updatedTask.category;
+    task.color = updatedTask.color;
+    persistTasks();
+    renderPlanner();
+  }
+
+  function removeTask(day, taskId) {
+    if (viewingHistoryWeek) return;
+    if (!weeklyTasks[day]) return;
+    weeklyTasks[day] = weeklyTasks[day].filter(item => item.id !== taskId);
+    persistTasks();
+    renderPlanner();
+  }
+
+  function renderPlanner() {
+    const grid = document.getElementById('scheduleGrid');
+    const timeRail = document.getElementById('timeRail');
+    const displayedTasks = getDisplayedTasks();
+    const displayedWeekStart = viewingHistoryWeek?.weekStart || currentWeekStart;
+    const layout = '7';
+    const { startHour, endHour, hourHeight, minuteHeight } = getScheduleBounds();
+    const totalMinutes = (endHour - startHour) * 60;
+    const totalHeight = (endHour - startHour) * hourHeight;
+    const isDarkTheme = document.body.dataset.theme === 'dark';
+
+    document.documentElement.style.setProperty('--hour-height', `${hourHeight}px`);
+    document.documentElement.style.setProperty('--grid-height', `${totalHeight}px`);
+    document.documentElement.style.setProperty('--day-grid-height', `${totalHeight}px`);
+
+    grid.dataset.layout = layout;
+    grid.classList.toggle('history-readonly', Boolean(viewingHistoryWeek));
+    grid.innerHTML = '';
+    document.getElementById('historyViewBanner').hidden = !viewingHistoryWeek;
+    document.getElementById('historyViewLabel').textContent = viewingHistoryWeek
+      ? `Geçmiş hafta: ${formatWeekRange(displayedWeekStart)} (salt okunur)`
+      : '';
+
+    timeRail.innerHTML = '';
+    for (let hour = startHour; hour <= endHour; hour += 1) {
+      const slot = document.createElement('div');
+      slot.className = 'time-slot';
+      slot.textContent = `${String(hour).padStart(2, '0')}:00`;
+      timeRail.appendChild(slot);
+    }
+
+    const rowLayout = layoutPatterns[layout] || layoutPatterns['7'];
+    rowLayout.forEach((rowDays) => {
+      const row = document.createElement('div');
+      row.className = 'week-row';
+
+      rowDays.forEach((day) => {
+        const col = document.createElement('div');
+        col.className = 'day-column';
+        col.dataset.day = day;
+        col.addEventListener('click', (event) => {
+          if (viewingHistoryWeek) return;
+          if (event.target.closest('.task-item') || event.target.closest('.task-card-btn')) return;
+          if (event.target.closest('.day-body')) {
+            openQuickAddAtPointer(day, event.clientY);
+            return;
+          }
+          openQuickAdd(day);
+        });
+
+        const dayTasks = sortDayTasks(displayedTasks[day] || []);
+        const taskLaneData = getTaskLaneData(dayTasks);
+        const weekDates = getCurrentWeekDates(displayedWeekStart);
+        const dayMeta = weekDates.find((item) => item.dayName === day) || weekDates[0];
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+
+        const title = document.createElement('h3');
+        title.textContent = day;
+
+        const dateBadge = document.createElement('div');
+        dateBadge.className = 'day-date';
+        dateBadge.textContent = dayMeta ? dayMeta.shortDate : '';
+
+        const counter = document.createElement('span');
+        counter.className = 'day-time-tag';
+        counter.textContent = `${dayTasks.length} plan`;
+
+        dayHeader.appendChild(title);
+        dayHeader.appendChild(dateBadge);
+        dayHeader.appendChild(counter);
+        col.appendChild(dayHeader);
+
+        const dayBody = document.createElement('div');
+        dayBody.className = 'day-body';
+        col.appendChild(dayBody);
+
+        if (dayTasks.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = 'Plan yok';
+          dayBody.appendChild(empty);
+        } else {
+          dayTasks.forEach((task) => {
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
+            const taskColor = task.color || categoryColors[task.category] || '#64748b';
+            const laneInfo = taskLaneData.get(task.id) || { laneIndex: 0, laneCount: 1 };
+            const shouldSplit = laneInfo.laneCount > 1 && ((dayTasks.filter((other) => other.id !== task.id && tasksOverlap(task, other))).length > 0);
+            const laneWidth = shouldSplit ? 100 / laneInfo.laneCount : 100;
+            const leftPercent = shouldSplit ? laneInfo.laneIndex * laneWidth : 0;
+            const dayStartMinutes = startHour * 60;
+            const dayEndMinutes = endHour * 60;
+            const taskStartMinutes = Math.max(dayStartMinutes, Math.min(dayEndMinutes, timeToMinutes(task.start)));
+            const taskEndMinutes = Math.max(dayStartMinutes, Math.min(dayEndMinutes, timeToMinutes(task.end)));
+            const taskDurationMinutes = Math.max(taskEndMinutes - taskStartMinutes, 15);
+            const topPx = minutesToPixels(taskStartMinutes, startHour);
+            const heightPx = Math.max(20, taskDurationMinutes * minuteHeight);
+            const taskTextColor = isDarkTheme ? '#e2e8f0' : '#0f172a';
+
+            taskItem.style.height = `${Math.max(20, heightPx - 4)}px`;
+            taskItem.style.background = isDarkTheme ? hexToRgba(taskColor, 0.2) : hexToRgba(taskColor, 0.1);
+            taskItem.style.border = `2px solid ${hexToRgba(taskColor, 0.72)}`;
+            taskItem.style.borderLeft = `7px solid ${taskColor}`;
+            taskItem.style.padding = '10px';
+            taskItem.style.cursor = 'pointer';
+            taskItem.style.color = taskTextColor;
+            taskItem.style.boxShadow = `0 0 0 1px ${hexToRgba(taskColor, 0.22)}, 0 8px 18px ${isDarkTheme ? 'rgba(15, 23, 42, 0.18)' : 'rgba(148, 163, 184, 0.12)'}`;
+            taskItem.style.width = `${laneWidth}%`;
+            taskItem.style.left = `${leftPercent}%`;
+            taskItem.style.top = `${topPx + 2}px`;
+            taskItem.style.zIndex = '2';
+
+            const taskMain = document.createElement('div');
+            taskMain.className = 'task-main';
+
+            const timeEl = document.createElement('div');
+            timeEl.className = 'task-time';
+            timeEl.textContent = formatTimeRange(task.start, task.end);
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'task-title';
+            titleEl.textContent = task.title;
+
+            taskMain.appendChild(timeEl);
+            taskMain.appendChild(titleEl);
+
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'task-resize-handle';
+            resizeHandle.title = 'Süreyi ayarlamak için sürükleyin';
+            resizeHandle.hidden = Boolean(viewingHistoryWeek);
+            resizeHandle.addEventListener('pointerdown', (event) => startTaskResize(event, day, task.id));
+
+            taskItem.appendChild(taskMain);
+            taskItem.appendChild(resizeHandle);
+            taskItem.addEventListener('pointerdown', (event) => {
+              if (viewingHistoryWeek) return;
+              if (event.target.closest('.task-resize-handle')) return;
+              startTaskDrag(event, day, task.id);
+            });
+            dayBody.appendChild(taskItem);
+          });
+        }
+
+        row.appendChild(col);
+      });
+
+      grid.appendChild(row);
+    });
+
+    updateStats(displayedTasks);
+    analyzePlanner(displayedTasks);
+  }
+
+  function addPlanTask(day = document.getElementById('quickAddDay').value) {
+    if (viewingHistoryWeek) return;
+    const title = document.getElementById('quickAddTitle').value.trim();
+    const category = 'Diğer';
+    const start = document.getElementById('quickAddStart').value;
+    const end = document.getElementById('quickAddEnd').value;
+    const color = document.getElementById('quickAddColor').value;
+
+    if (!title) {
+      alert('Lütfen plan başlığı yazın.');
+      return;
+    }
+    if (!start || !end) {
+      alert('Lütfen saat aralığı seçin.');
+      return;
+    }
+    if (timeToMinutes(end) <= timeToMinutes(start)) {
+      alert('Bitiş saati başlangıçtan sonra olmalıdır.');
+      return;
+    }
+
+    if (!weeklyTasks[day]) weeklyTasks[day] = [];
+    weeklyTasks[day].push({ id: generateTaskId(), title, start, end, category, color });
+    persistTasks();
+    document.getElementById('quickAddTitle').value = '';
+    renderPlanner();
+    document.getElementById('quickAddPanel').classList.add('hidden');
+  }
+
+  function closeDayModal() {
+    document.getElementById('dayModal').classList.add('hidden');
+  }
+
+  function closeTaskSettings() {
+    document.getElementById('taskSettingsPanel').classList.add('hidden');
+  }
+
+  function closeQuickAdd() {
+    document.getElementById('quickAddPanel').classList.add('hidden');
+  }
+
+  document.getElementById('closeDayModal').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeDayModal();
+  });
+
+  document.getElementById('openHistoryBtn').addEventListener('click', () => {
+    renderHistoryList();
+    document.getElementById('historyModal').classList.remove('hidden');
+  });
+  document.getElementById('closeHistoryModal').addEventListener('click', () => {
+    document.getElementById('historyModal').classList.add('hidden');
+  });
+  document.getElementById('historyModal').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) event.currentTarget.classList.add('hidden');
+  });
+  document.getElementById('returnCurrentWeekBtn').addEventListener('click', () => {
+    viewingHistoryWeek = null;
+    renderPlanner();
+  });
+
+  document.getElementById('closeQuickAdd').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeQuickAdd();
+  });
+
+  document.getElementById('closeTaskSettings').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeTaskSettings();
+  });
+
+  document.getElementById('dayModal').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) {
+      closeDayModal();
+    }
+  });
+
+  document.getElementById('quickAddPanel').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) {
+      closeQuickAdd();
+    }
+  });
+
+  document.getElementById('taskSettingsPanel').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) {
+      closeTaskSettings();
+    }
+  });
+
+  document.getElementById('saveQuickAddBtn').addEventListener('click', () => {
+    addPlanTask();
+  });
+
+  const themeToggle = document.getElementById('themeToggle');
+  const themeText = document.getElementById('themeText');
+  const themeIcon = document.getElementById('themeIcon');
+  const analysisToggle = document.getElementById('analysisToggle');
+  const analysisPanel = document.getElementById('analysisPanel');
+
+  function applyTheme(themeName) {
+    const theme = themeName === 'dark' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem('planner-theme', theme);
+    themeText.textContent = theme === 'dark' ? 'Açık' : 'Koyu';
+    themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    renderPlanner();
+  }
+
+  const savedTheme = localStorage.getItem('planner-theme') || 'light';
+  applyTheme(savedTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+  });
+
+  analysisToggle.addEventListener('click', () => {
+    analysisPanel.classList.toggle('hidden');
+    if (!analysisPanel.classList.contains('hidden')) {
+      analyzePlanner();
+    }
+  });
+
+  const plannerLayoutSelect = document.getElementById('plannerLayout');
+  plannerLayoutSelect.value = '7';
+  plannerLayoutSelect.disabled = true;
+  analyzePlanner();
+  renderPlanner();
+  window.setInterval(() => {
+    if (syncWeekStart()) renderPlanner();
+  }, 60000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+# Retained local copy of the original PomoPro project
+_archive/
+
+# Editor and operating-system files
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ders Notları — Akıllı Asistan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  :root { color-scheme: light; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #f3f6fb 0%, #eef3f8 100%);
+    color: #1f2937;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  body[data-theme="dark"] {
+    background: linear-gradient(180deg, #020817 0%, #0f172a 100%);
+    color: #e2e8f0;
+    color-scheme: dark;
+  }
+  button, input, textarea { font: inherit; }
+  button { color: inherit; }
+  .container {
+    position: relative;
+    min-height: 100vh;
+    padding: 20px 22px 40px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(148,163,184,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    backdrop-filter: blur(12px);
+  }
+  body[data-theme="dark"] .container { background: rgba(15,23,42,0.78); }
+  .nav-bar { display: flex; gap: 10px; margin-bottom: 22px; border-bottom: 1px solid rgba(148,163,184,0.18); padding-bottom: 12px; flex-wrap: wrap; }
+  .nav-btn {
+    padding: 9px 16px;
+    border: 1px solid rgba(148,163,184,0.2);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.72);
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  body[data-theme="dark"] .nav-btn { background: rgba(30,41,59,0.9); color: #cbd5e1; }
+  .nav-btn.active { background: linear-gradient(135deg,#e0ecff,#dfe7ff); color: #1e3a8a; box-shadow: 0 8px 18px rgba(96,165,250,0.14); }
+  body[data-theme="dark"] .nav-btn.active { background: linear-gradient(135deg,rgba(96,165,250,0.2),rgba(59,130,246,0.24)); color: #dbeafe; }
+  .nav-btn:hover { transform: translateY(-1px); }
+  .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 auto 20px; max-width: 1500px; }
+  h1 { color: #0f172a; font-size: 25px; margin-bottom: 5px; }
+  body[data-theme="dark"] h1 { color: #f8fafc; }
+  .subtitle { color: #64748b; font-size: 13px; }
+  body[data-theme="dark"] .subtitle { color: #94a3b8; }
+  .theme-toggle, .primary-btn, .secondary-btn, .danger-btn {
+    border: 0;
+    border-radius: 11px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+  .theme-toggle, .secondary-btn { background: rgba(148,163,184,0.14); color: inherit; }
+  .theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 50;
+    border: 1px solid rgba(148,163,184,0.2);
+    border-radius: 999px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.8);
+    color: #0f172a;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 24px rgba(15,23,42,0.12);
+  }
+  body[data-theme="dark"] .theme-toggle {
+    border-color: rgba(148,163,184,0.18);
+    background: rgba(15,23,42,0.8);
+    color: #f8fafc;
+  }
+  .primary-btn { background: linear-gradient(135deg,#2563eb,#1e3a8a); color: #fff; box-shadow: 0 10px 20px rgba(37,99,235,0.18); }
+  .danger-btn { background: rgba(239,68,68,0.12); color: #b91c1c; }
+  body[data-theme="dark"] .danger-btn { color: #fca5a5; }
+  .primary-btn:hover, .secondary-btn:hover, .danger-btn:hover, .theme-toggle:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .notes-layout { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 18px; max-width: 1500px; margin: auto; align-items: start; }
+  .sidebar, .note-card {
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(148,163,184,0.18);
+    border-radius: 18px;
+    box-shadow: 0 10px 26px rgba(15,23,42,0.06);
+  }
+  body[data-theme="dark"] .sidebar, body[data-theme="dark"] .note-card { background: rgba(15,23,42,0.84); border-color: rgba(148,163,184,0.18); }
+  .sidebar { position: sticky; top: 16px; padding: 14px; }
+  .sidebar-actions { display: grid; grid-template-columns: 1fr 44px; gap: 8px; margin-bottom: 11px; }
+  .icon-btn { border: 1px solid rgba(148,163,184,0.2); border-radius: 11px; background: rgba(148,163,184,0.1); cursor: pointer; font-size: 17px; }
+  .search-input, .title-input, .note-editor {
+    width: 100%;
+    border: 1px solid rgba(148,163,184,0.24);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.8);
+    color: inherit;
+    outline: none;
+  }
+  body[data-theme="dark"] .search-input, body[data-theme="dark"] .title-input, body[data-theme="dark"] .note-editor {
+    background: rgba(2,6,23,0.48);
+    border-color: rgba(148,163,184,0.24);
+    color: #e2e8f0;
+  }
+  .search-input { padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+  .note-list { display: grid; gap: 7px; max-height: calc(100vh - 220px); overflow: auto; }
+  .note-list-item { width: 100%; padding: 12px; text-align: left; border: 1px solid transparent; border-radius: 12px; background: transparent; cursor: pointer; }
+  .note-list-item:hover { background: rgba(148,163,184,0.1); }
+  .note-list-item.active { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.24); }
+  .note-list-title { display: block; overflow: hidden; color: #1e293b; font-weight: 700; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  body[data-theme="dark"] .note-list-title { color: #f1f5f9; }
+  .note-list-meta { display: block; margin-top: 5px; color: #64748b; font-size: 11px; }
+  .empty-list { padding: 22px 10px; text-align: center; color: #64748b; font-size: 12px; line-height: 1.6; }
+  .note-card { min-width: 0; padding: clamp(16px,2.4vw,28px); }
+  .note-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .save-status { min-height: 18px; color: #64748b; font-size: 12px; }
+  .note-actions { display: flex; gap: 8px; }
+  .title-input { padding: 13px 15px; margin-bottom: 12px; font-size: 20px; font-weight: 700; }
+  .text-draw-surface {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(148,163,184,0.24);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.8);
+  }
+  body[data-theme="dark"] .text-draw-surface { background: rgba(2,6,23,0.3); }
+  .note-editor {
+    display: block;
+    min-height: 460px;
+    padding: 18px;
+    resize: vertical;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .note-editor:focus, .title-input:focus, .search-input:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+  .text-draw-surface .note-editor:focus { box-shadow: none; }
+  .draw-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .drawing-active .draw-overlay { pointer-events: auto; cursor: crosshair; touch-action: none; }
+  .note-workspace { position: relative; display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; align-items: start; overflow: visible; }
+  .photo-section { min-width: 0; margin-top: 16px; }
+  .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .section-heading h2 { font-size: 15px; }
+  .photo-list { display: flex; flex-wrap: wrap; gap: 9px; margin: 0 0 10px; }
+  .photo-list:empty { display: none; }
+  .photo-thumb-wrap { position: relative; }
+  .photo-thumb { position: relative; width: 76px; height: 76px; padding: 3px; border: 2px solid transparent; border-radius: 12px; background: rgba(148,163,184,0.12); cursor: pointer; }
+  .photo-thumb[aria-pressed="true"] { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.18); }
+  .photo-thumb img { display: block; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; }
+  .photo-visibility { position: absolute; right: 2px; bottom: 2px; min-width: 24px; height: 24px; padding: 0 5px; border: 1px solid rgba(255,255,255,0.9); border-radius: 8px; background: rgba(15,23,42,0.78); color: #fff; cursor: pointer; font-size: 12px; }
+  .photo-visibility[aria-pressed="false"] { opacity: 0.72; }
+  .photo-empty { display: grid; min-height: 145px; place-content: center; gap: 6px; border: 1px dashed rgba(148,163,184,0.42); border-radius: 14px; color: #64748b; text-align: center; font-size: 12px; }
+  .photo-surfaces { grid-row: 2; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; min-width: 0; }
+  .photo-surfaces:empty { display: none; }
+  .photo-surface { position: relative; flex: 0 1 auto; width: min(var(--photo-width,360px),100%); max-width: 100%; aspect-ratio: var(--photo-aspect,1); overflow: hidden; border: 1px solid rgba(148,163,184,0.24); border-radius: 14px; background: #fff; cursor: grab; touch-action: none; }
+  .photo-surface:active { cursor: grabbing; }
+  .photo-surface.is-free { position: absolute; z-index: 8; }
+  .photo-surface img { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+  .photo-surface .draw-overlay { inset: 0; }
+  .photo-resize-handle { position: absolute; z-index: 3; right: 0; bottom: 0; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 9px 0 0 0; background: linear-gradient(135deg,transparent 45%,rgba(37,99,235,0.16) 46%,rgba(37,99,235,0.16) 53%,transparent 54%),linear-gradient(135deg,transparent 63%,rgba(37,99,235,0.3) 64%,rgba(37,99,235,0.3) 71%,transparent 72%); cursor: nwse-resize; touch-action: none; }
+  .photo-resize-handle:hover, .photo-resize-handle:focus-visible { background-color: rgba(37,99,235,0.12); outline: 2px solid #3b82f6; outline-offset: -3px; }
+  .photo-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+  .photo-surface.is-moving { z-index: 4; opacity: 0.82; pointer-events: none; box-shadow: 0 16px 36px rgba(15,23,42,0.3); }
+  .drawing-panel {
+    position: fixed;
+    z-index: 30;
+    right: 22px;
+    bottom: 22px;
+    width: 292px;
+    padding: 12px;
+    border: 1px solid rgba(148,163,184,0.24);
+    border-radius: 17px;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 18px 48px rgba(15,23,42,0.22);
+    backdrop-filter: blur(16px);
+    touch-action: none;
+  }
+  body[data-theme="dark"] .drawing-panel { background: rgba(15,23,42,0.97); border-color: rgba(148,163,184,0.25); }
+  .drawing-panel.hidden { display: none; }
+  .drawing-panel-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: -2px -2px 10px; cursor: move; }
+  .drawing-panel-title { font-size: 13px; font-weight: 800; }
+  .panel-header-actions { display: flex; gap: 6px; }
+  .panel-icon-btn { width: 30px; height: 30px; border: 0; border-radius: 9px; background: rgba(148,163,184,0.14); cursor: pointer; }
+  .draw-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .draw-tool { padding: 9px 8px; border: 1px solid rgba(148,163,184,0.22); border-radius: 10px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 700; }
+  .draw-tool.active { background: rgba(59,130,246,0.13); border-color: #60a5fa; color: #1d4ed8; }
+  body[data-theme="dark"] .draw-tool.active { color: #bfdbfe; }
+  .color-picker { display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 7px; margin: 12px 0; }
+  .color-swatch { width: 21px; height: 21px; justify-self: center; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.24); }
+  .color-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6; }
+  .width-control { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; color: #64748b; font-size: 11px; }
+  .width-control input { width: 100%; accent-color: #2563eb; }
+  .eraser-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
+  .eraser-modes[hidden] { display: none; }
+  .eraser-mode { padding: 8px 6px; border: 1px solid rgba(148,163,184,0.22); border-radius: 9px; background: transparent; cursor: pointer; font-size: 10px; }
+  .eraser-mode.active { border-color: #60a5fa; background: rgba(59,130,246,0.12); font-weight: 700; }
+  .target-row { display: flex; gap: 7px; margin-top: 12px; }
+  .target-btn { flex: 1; padding: 8px 5px; border: 1px solid rgba(148,163,184,0.22); border-radius: 9px; background: transparent; cursor: pointer; font-size: 11px; }
+  .target-btn.active { border-color: #60a5fa; background: rgba(59,130,246,0.12); font-weight: 700; }
+  .panel-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+  .small-action { border: 0; background: transparent; color: #64748b; font-size: 11px; text-decoration: underline; cursor: pointer; }
+  .floating-draw-btn { position: fixed; right: 22px; bottom: 22px; z-index: 29; border: 0; border-radius: 999px; padding: 13px 17px; background: #2563eb; color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 12px 28px rgba(37,99,235,0.3); }
+  .floating-draw-btn.hidden { display: none; }
+  .toast { position: fixed; z-index: 50; left: 50%; bottom: 22px; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 10px 15px; border: 1px solid rgba(148,163,184,0.25); border-radius: 12px; background: #0f172a; color: #fff; font-size: 12px; box-shadow: 0 10px 25px rgba(15,23,42,0.22); }
+  .toast.hidden { display: none; }
+  @media (max-width: 800px) {
+    .container { padding: 14px 12px 28px; }
+    .notes-layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .note-list { grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); max-height: 180px; }
+    .note-editor { min-height: 360px; }
+    .note-workspace[data-photo-position="left"],
+    .note-workspace[data-photo-position="right"] { grid-template-columns: minmax(0,1fr) minmax(0,min(var(--photo-width,160px),50%)); }
+    .note-workspace[data-photo-position="left"] { grid-template-columns: minmax(0,min(var(--photo-width,160px),50%)) minmax(0,1fr); }
+  }
+  @media (max-width: 520px) {
+    .page-heading { align-items: flex-start; }
+    .page-heading h1 { font-size: 21px; }
+    .drawing-panel { right: 12px; bottom: 12px; width: min(292px,calc(100vw - 24px)); }
+    .floating-draw-btn { right: 12px; bottom: 12px; }
+    .note-toolbar { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="container">
+  <nav class="nav-bar" aria-label="Ana gezinme">
+    <a href="index.html" class="nav-btn">📐 Soru Çözücü</a>
+    <a href="planlayici.html" class="nav-btn">📅 Haftalık Program</a>
+    <a href="notlar.html" class="nav-btn active" aria-current="page">📝 Notlar</a>
+    <a href="pomodoro.html" class="nav-btn">⏱️ Pomodoro</a>
+  </nav>
+  <header class="page-heading">
+    <div><h1>📝 Ders Notları</h1><p class="subtitle">Notlarını yaz, fotoğraf ekle ve çizimlerle önemli yerleri işaretle.</p></div>
+    <button type="button" id="themeToggle" class="theme-toggle"><span id="themeIcon">🌙</span> <span id="themeText">Koyu</span></button>
+  </header>
+
+  <main class="notes-layout">
+    <aside class="sidebar" aria-label="Not listesi">
+      <div class="sidebar-actions">
+        <button type="button" id="newNoteBtn" class="primary-btn">＋ Yeni not</button>
+        <button type="button" id="uploadPhotoBtn" class="icon-btn" title="Fotoğraf ekle" aria-label="Fotoğraf ekle">📷</button>
+      </div>
+      <input id="noteSearch" class="search-input" type="search" placeholder="Notlarda ara..." aria-label="Notlarda ara">
+      <div id="noteList" class="note-list"></div>
+    </aside>
+
+    <section class="note-card" aria-label="Not düzenleyici">
+      <div class="note-toolbar">
+        <div id="saveStatus" class="save-status" role="status" aria-live="polite">Notlarını kaydetmeye hazır</div>
+        <div class="note-actions">
+          <button type="button" id="deleteNoteBtn" class="danger-btn" disabled>Notu sil</button>
+        </div>
+      </div>
+      <input id="noteTitle" class="title-input" type="text" placeholder="Not başlığı" maxlength="160" aria-label="Not başlığı" disabled>
+      <div id="noteWorkspace" class="note-workspace">
+       <div id="textDrawSurface" class="text-draw-surface">
+         <textarea id="noteBody" class="note-editor" placeholder="Ders notlarını buraya yaz..." aria-label="Ders notu" disabled></textarea>
+         <svg id="textDrawing" class="draw-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="Not üzerine çizim alanı"></svg>
+       </div>
+       <div id="photoSurfaces" class="photo-surfaces"></div>
+       <section id="photoSection" class="photo-section">
+        <div class="section-heading">
+          <h2>Not fotoğrafları</h2>
+          <div class="photo-tools">
+            <button type="button" id="replacePhotoBtn" class="secondary-btn" disabled>📷 Fotoğraf ekle</button>
+            <button type="button" id="removePhotoBtn" class="secondary-btn" hidden>Seçili fotoğrafı kaldır</button>
+          </div>
+        </div>
+        <div id="photoList" class="photo-list" role="group" aria-label="Not fotoğrafları"></div>
+        <div id="photoEmpty" class="photo-empty"><strong id="photoEmptyTitle">Henüz fotoğraf eklenmedi</strong><span id="photoEmptyMessage">Notuna ders kitabı veya tahta fotoğrafı ekleyebilirsin.</span></div>
+        <p class="subtitle">Fotoğrafı seçmek için küçük görseline, gösterip gizlemek için göz simgesine dokun. Ekrandaki fotoğrafa tıklayınca ilk konumuna döner; sürükleyip köşesinden boyutlandırabilirsin.</p>
+       </section>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" hidden>
+    </section>
+  </main>
+</div>
+
+<button type="button" id="openDrawingPanel" class="floating-draw-btn hidden">✏️ Çizim araçları</button>
+<aside id="drawingPanel" class="drawing-panel hidden" aria-label="Çizim araçları">
+  <div id="drawingPanelHeader" class="drawing-panel-header">
+    <span class="drawing-panel-title">✏️ Çizim araçları</span>
+    <span class="panel-header-actions">
+      <button type="button" id="collapseDrawingPanel" class="panel-icon-btn" title="Paneli küçült" aria-label="Paneli küçült">−</button>
+      <button type="button" id="closeDrawingPanel" class="panel-icon-btn" title="Paneli kapat" aria-label="Paneli kapat">×</button>
+    </span>
+  </div>
+  <div id="drawingControls">
+    <div class="draw-tools">
+      <button type="button" id="penTool" class="draw-tool active" aria-pressed="true">✏️ Kalem</button>
+      <button type="button" id="eraserTool" class="draw-tool" aria-pressed="false">🧽 Silgi</button>
+    </div>
+    <div id="drawingColors" class="color-picker" role="group" aria-label="Kalem rengi"></div>
+    <label class="width-control"><span id="sizeMinLabel">İnce</span><input id="penWidth" type="range" min="2" max="18" value="5" aria-label="Kalem kalınlığı"><span id="penWidthValue">5 px</span></label>
+    <div id="eraserModes" class="eraser-modes" hidden>
+      <button type="button" id="eraseStrokeMode" class="eraser-mode active" aria-pressed="true">Çizginin tamamı</button>
+      <button type="button" id="erasePartMode" class="eraser-mode" aria-pressed="false">Dokunduğum yer</button>
+    </div>
+    <div class="target-row">
+      <button type="button" id="textTarget" class="target-btn active" aria-pressed="true">📝 Not alanı</button>
+      <button type="button" id="photoTarget" class="target-btn" aria-pressed="false">🖼️ Fotoğraf</button>
+    </div>
+    <div class="panel-foot"><span id="drawingHint" class="subtitle">Çizmek için not alanına dokun.</span><button type="button" id="clearDrawingBtn" class="small-action">Bu alandaki çizimleri sil</button></div>
+  </div>
+</aside>
+<div id="toast" class="toast hidden" role="alert"></div>
+
+<script>
+  const DB_NAME = 'ders-asist-notes';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'notes';
+  const palette = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6','#06b6d4','#0ea5e9','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899','#f43f5e','#111827','#ffffff','#64748b'];
+  const elements = {
+    list: document.getElementById('noteList'),
+    search: document.getElementById('noteSearch'),
+    title: document.getElementById('noteTitle'),
+    body: document.getElementById('noteBody'),
+    status: document.getElementById('saveStatus'),
+    delete: document.getElementById('deleteNoteBtn'),
+    photoInput: document.getElementById('photoInput'),
+    photoSurfaces: document.getElementById('photoSurfaces'),
+    photoEmpty: document.getElementById('photoEmpty'),
+    photoList: document.getElementById('photoList'),
+    removePhoto: document.getElementById('removePhotoBtn'),
+    photoSection: document.getElementById('photoSection'),
+    workspace: document.getElementById('noteWorkspace'),
+    textSurface: document.getElementById('textDrawSurface'),
+    textSvg: document.getElementById('textDrawing'),
+    panel: document.getElementById('drawingPanel'),
+    panelControls: document.getElementById('drawingControls'),
+    toast: document.getElementById('toast')
+  };
+  let database;
+  let notes = [];
+  let currentNoteId = null;
+  let saveTimer;
+  let toastTimer;
+  let activeTool = 'off';
+  let activeTarget = 'text';
+  let activeColor = '#2563eb';
+  let penWidth = 5;
+  let eraserWidth = 20;
+  let eraserMode = 'stroke';
+  let drawing = null;
+  let panelDrag = null;
+  let photoDrag = null;
+  let photoResize = null;
+  const themeToggle = document.getElementById('themeToggle');
+
+  function openDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) {
+        reject(new Error('Bu tarayıcı not saklama özelliğini desteklemiyor.'));
+        return;
+      }
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Not veritabanı açılamadı.'));
+    });
+  }
+
+  function storeRequest(mode, action) {
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(STORE_NAME, mode);
+      const request = action(transaction.objectStore(STORE_NAME));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Not verisi kaydedilemedi.'));
+      transaction.onabort = () => reject(transaction.error || new Error('Not işlemi tamamlanamadı.'));
+    });
+  }
+
+  function getCurrentNote() {
+    return notes.find((note) => note.id === currentNoteId) || null;
+  }
+
+  function showToast(message) {
+    elements.toast.textContent = message;
+    elements.toast.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => elements.toast.classList.add('hidden'), 3500);
+  }
+
+  function setStatus(message, isError = false) {
+    elements.status.textContent = message;
+    elements.status.style.color = isError ? '#dc2626' : '';
+  }
+
+  function createEmptyNote() {
+    const now = new Date().toISOString();
+    return { id: crypto.randomUUID ? crypto.randomUUID() : `note-${Date.now()}-${Math.random().toString(16).slice(2)}`, title: '', body: '', photos: [], activePhotoId: null, photoLayoutVersion: 3, textStrokes: [], createdAt: now, updatedAt: now };
+  }
+
+  function getCurrentPhoto(note = getCurrentNote()) {
+    const photo = note?.photos?.find((item) => item.id === note.activePhotoId) || note?.photos?.[0] || null;
+    if (photo && note.activePhotoId !== photo.id) note.activePhotoId = photo.id;
+    return photo;
+  }
+
+  function getPhotoSurface(photoId) {
+    return [...elements.photoSurfaces.querySelectorAll('.photo-surface')]
+      .find((surface) => surface.dataset.photoId === photoId) || null;
+  }
+
+  function getDrawingStrokes(note, target, photoId = note?.activePhotoId) {
+    if (target === 'text') return note?.textStrokes || [];
+    return note?.photos?.find((photo) => photo.id === photoId)?.strokes || [];
+  }
+
+  function setDrawingStrokes(note, target, strokes, photoId = note?.activePhotoId) {
+    if (target === 'text') note.textStrokes = strokes;
+    else {
+      const photo = note.photos?.find((item) => item.id === photoId);
+      if (photo) photo.strokes = strokes;
+    }
+  }
+
+  function renderNoteList() {
+    const query = elements.search.value.trim().toLocaleLowerCase('tr-TR');
+    const filtered = notes.filter((note) => `${note.title} ${note.body}`.toLocaleLowerCase('tr-TR').includes(query))
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    elements.list.replaceChildren();
+    if (!filtered.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-list';
+      empty.textContent = query ? 'Aramana uygun not bulunamadı.' : 'Henüz not yok. “Yeni not” ile başlayabilirsin.';
+      elements.list.appendChild(empty);
+      return;
+    }
+    filtered.forEach((note) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `note-list-item${note.id === currentNoteId ? ' active' : ''}`;
+      const title = document.createElement('span');
+      title.className = 'note-list-title';
+      title.textContent = note.title.trim() || 'Başlıksız not';
+      const meta = document.createElement('span');
+      meta.className = 'note-list-meta';
+      const date = new Date(note.updatedAt);
+      meta.textContent = `${note.photos?.length ? `📷 ${note.photos.length} · ` : ''}${date.toLocaleDateString('tr-TR')} ${date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+      button.append(title, meta);
+      button.addEventListener('click', () => selectNote(note.id));
+      elements.list.appendChild(button);
+    });
+  }
+
+  function renderStrokes(svg, strokes) {
+    svg.replaceChildren();
+    (strokes || []).forEach((stroke) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      line.setAttribute('points', stroke.points.map((point) => `${point.x * 1000},${point.y * 1000}`).join(' '));
+      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke', stroke.color);
+      line.setAttribute('stroke-width', String(stroke.width));
+      line.setAttribute('stroke-linecap', 'round');
+      line.setAttribute('stroke-linejoin', 'round');
+      line.dataset.strokeId = stroke.id;
+      svg.appendChild(line);
+    });
+  }
+
+  function createPhotoSurface(photo, index) {
+    const surface = document.createElement('div');
+    surface.className = 'photo-surface';
+    surface.dataset.photoId = photo.id;
+    surface.style.setProperty('--photo-width', `${photo.width || 360}px`);
+    surface.style.setProperty('--photo-aspect', String(photo.aspect || 1));
+    surface.classList.toggle('is-free', Boolean(photo.free));
+
+    const image = document.createElement('img');
+    image.alt = `Nota eklenmiş ders fotoğrafı ${index + 1}`;
+    image.src = photo.dataUrl;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('draw-overlay');
+    svg.setAttribute('viewBox', '0 0 1000 1000');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-label', `Fotoğraf ${index + 1} üzerine çizim alanı`);
+    svg.dataset.photoId = photo.id;
+    svg.addEventListener('pointerdown', drawPointerDown);
+    svg.addEventListener('pointermove', drawPointerMove);
+    svg.addEventListener('pointerup', drawPointerUp);
+    svg.addEventListener('pointercancel', drawPointerUp);
+
+    image.addEventListener('load', () => {
+      const currentPhoto = getCurrentNote()?.photos?.find((item) => item.id === photo.id);
+      if (!currentPhoto || !image.naturalWidth || !image.naturalHeight) return;
+      const aspect = image.naturalWidth / image.naturalHeight;
+      if (currentPhoto.aspect === aspect) return;
+      currentPhoto.aspect = aspect;
+      surface.style.setProperty('--photo-aspect', String(aspect));
+      if (currentPhoto.free) {
+        elements.workspace.style.minHeight = `${Math.max(elements.textSurface.offsetHeight, (Number(currentPhoto.y) || 0) + surface.offsetHeight)}px`;
+      }
+      persistCurrentNote();
+    });
+
+    const resizeHandle = document.createElement('button');
+    resizeHandle.type = 'button';
+    resizeHandle.className = 'photo-resize-handle';
+    resizeHandle.setAttribute('aria-label', `Fotoğraf ${index + 1} köşesinden tutup yeniden boyutlandır`);
+    resizeHandle.title = 'Köşeden tutup boyutlandır';
+    resizeHandle.addEventListener('pointerdown', startPhotoResize);
+    resizeHandle.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
+      event.preventDefault();
+      const direction = event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1 : 1;
+      const current = getCurrentNote()?.photos?.find((item) => item.id === photo.id);
+      setPhotoWidth(photo.id, Math.min(1200, Math.max(100, (current?.width || 360) + direction * (event.shiftKey ? 50 : 10))));
+      persistCurrentNote();
+    });
+
+    surface.append(image, svg, resizeHandle);
+    renderStrokes(svg, photo.strokes || []);
+    surface.classList.toggle('drawing-active', activeTarget === 'photo' && activeTool !== 'off');
+    return surface;
+  }
+
+  function updateDrawingSurface() {
+    const hasNote = Boolean(currentNoteId);
+    const note = getCurrentNote();
+    const photo = getCurrentPhoto(note);
+    const visiblePhotos = (note?.photos || []).filter((item) => item.visible !== false);
+    const hasPhoto = visiblePhotos.length > 0;
+    elements.title.disabled = !hasNote;
+    elements.body.disabled = !hasNote;
+    elements.delete.disabled = !hasNote;
+    document.getElementById('uploadPhotoBtn').disabled = !hasNote;
+    document.getElementById('replacePhotoBtn').disabled = !hasNote;
+    elements.title.value = note?.title || '';
+    elements.body.value = note?.body || '';
+    elements.photoEmpty.style.display = hasPhoto ? 'none' : 'grid';
+    document.getElementById('photoEmptyTitle').textContent = note?.photos?.length ? 'Fotoğraflar gizli' : 'Henüz fotoğraf eklenmedi';
+    document.getElementById('photoEmptyMessage').textContent = note?.photos?.length
+      ? 'Ekranda göstermek istediğin fotoğrafın üzerindeki göz simgesine dokun.'
+      : 'Notuna ders kitabı veya tahta fotoğrafı ekleyebilirsin.';
+    elements.removePhoto.hidden = !hasPhoto;
+    elements.photoList.replaceChildren();
+    (note?.photos || []).forEach((item, index) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'photo-thumb-wrap';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'photo-thumb';
+      button.setAttribute('aria-pressed', String(item.id === photo?.id));
+      button.setAttribute('aria-label', `Fotoğraf ${index + 1} seç`);
+      button.title = `Fotoğraf ${index + 1}`;
+      const thumbnail = document.createElement('img');
+      thumbnail.src = item.dataUrl;
+      thumbnail.alt = '';
+      button.appendChild(thumbnail);
+      button.addEventListener('click', () => {
+        note.activePhotoId = item.id;
+        item.visible = true;
+        updateDrawingSurface();
+        persistCurrentNote();
+      });
+      const visibility = document.createElement('button');
+      visibility.type = 'button';
+      visibility.className = 'photo-visibility';
+      visibility.textContent = item.visible === false ? '◌' : '◉';
+      visibility.setAttribute('aria-pressed', String(item.visible !== false));
+      visibility.setAttribute('aria-label', item.visible === false ? `Fotoğraf ${index + 1} ekranda göster` : `Fotoğraf ${index + 1} ekrandan gizle`);
+      visibility.title = item.visible === false ? 'Ekranda göster' : 'Ekrandan gizle';
+      visibility.addEventListener('click', () => {
+        item.visible = item.visible === false;
+        if (item.visible && activeTarget === 'photo') note.activePhotoId = item.id;
+        if (!visiblePhotos.length || (item.id === note.activePhotoId && !item.visible)) {
+          const nextVisible = note.photos.find((entry) => entry.visible !== false);
+          if (nextVisible) note.activePhotoId = nextVisible.id;
+          else setDrawingTarget('text', false);
+        }
+        updateDrawingSurface();
+        persistCurrentNote();
+      });
+      wrapper.append(button, visibility);
+      elements.photoList.appendChild(wrapper);
+    });
+    elements.photoSurfaces.replaceChildren(...visiblePhotos.map((item, index) => createPhotoSurface(item, index)));
+    requestAnimationFrame(() => {
+      const freePhotos = visiblePhotos.filter((item) => item.free);
+      const requiredHeight = freePhotos.reduce((height, item) => {
+        const surface = getPhotoSurface(item.id);
+        return surface ? Math.max(height, (Number(item.y) || 0) + surface.offsetHeight) : height;
+      }, elements.textSurface.offsetHeight);
+      elements.workspace.style.minHeight = freePhotos.length ? `${requiredHeight}px` : '';
+      freePhotos.forEach((item) => {
+        const surface = getPhotoSurface(item.id);
+        if (!surface) return;
+        const maxLeft = Math.max(0, elements.workspace.clientWidth - surface.offsetWidth);
+        surface.style.left = `${Math.min(Math.max(0, Number(item.x) || 0), maxLeft)}px`;
+        surface.style.top = `${Math.max(0, Number(item.y) || 0)}px`;
+      });
+    });
+    renderStrokes(elements.textSvg, note?.textStrokes || []);
+    elements.textSurface.classList.toggle('drawing-active', activeTarget === 'text' && activeTool !== 'off');
+    elements.photoSurfaces.querySelectorAll('.photo-surface').forEach((surface) => {
+      surface.classList.toggle('drawing-active', activeTarget === 'photo' && activeTool !== 'off');
+    });
+    document.getElementById('openDrawingPanel').classList.toggle('hidden', !hasNote || !elements.panel.classList.contains('hidden'));
+    document.getElementById('drawingHint').textContent = activeTarget === 'text' ? 'Çizmek için not alanına dokun.' : hasPhoto ? 'Çizmek için fotoğrafa dokun.' : 'Önce bu nota bir fotoğraf ekle.';
+    document.getElementById('photoTarget').disabled = !hasPhoto;
+  }
+
+  async function selectNote(id) {
+    flushSave();
+    currentNoteId = id;
+    activeTool = 'off';
+    document.getElementById('penTool').classList.remove('active');
+    document.getElementById('penTool').setAttribute('aria-pressed', 'false');
+    document.getElementById('eraserTool').classList.remove('active');
+    document.getElementById('eraserTool').setAttribute('aria-pressed', 'false');
+    document.getElementById('drawingPanel').classList.add('hidden');
+    updateDrawingSurface();
+    renderNoteList();
+    setStatus('Not yüklendi');
+  }
+
+  async function persistCurrentNote() {
+    const note = getCurrentNote();
+    if (!note) return;
+    note.title = elements.title.value;
+    note.body = elements.body.value;
+    note.updatedAt = new Date().toISOString();
+    setStatus('Kaydediliyor…');
+    try {
+      await storeRequest('readwrite', (store) => store.put(note));
+      if (currentNoteId === note.id) setStatus('Tüm değişiklikler kaydedildi');
+      renderNoteList();
+    } catch (error) {
+      console.error('Not kaydedilemedi:', error);
+      setStatus('Kaydetme başarısız', true);
+      showToast('Not kaydedilemedi. Tarayıcı depolama alanını kontrol et.');
+    }
+  }
+
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    setStatus('Kaydediliyor…');
+    saveTimer = setTimeout(persistCurrentNote, 350);
+  }
+
+  function flushSave() {
+    clearTimeout(saveTimer);
+    return persistCurrentNote();
+  }
+
+  async function addNote() {
+    await flushSave();
+    const note = createEmptyNote();
+    notes.unshift(note);
+    currentNoteId = note.id;
+    try {
+      await storeRequest('readwrite', (store) => store.put(note));
+      elements.search.value = '';
+      updateDrawingSurface();
+      renderNoteList();
+      elements.title.focus();
+      setStatus('Yeni not hazır');
+    } catch (error) {
+      notes = notes.filter((item) => item.id !== note.id);
+      currentNoteId = notes[0]?.id || null;
+      console.error('Yeni not oluşturulamadı:', error);
+      showToast('Yeni not oluşturulamadı. Tarayıcı depolama alanını kontrol et.');
+      updateDrawingSurface();
+      renderNoteList();
+    }
+  }
+
+  async function deleteCurrentNote() {
+    const note = getCurrentNote();
+    if (!note || !confirm(`“${note.title.trim() || 'Başlıksız not'}” silinsin mi?`)) return;
+    try {
+      await storeRequest('readwrite', (store) => store.delete(note.id));
+      notes = notes.filter((item) => item.id !== note.id);
+      currentNoteId = notes[0]?.id || null;
+      updateDrawingSurface();
+      renderNoteList();
+      setStatus(currentNoteId ? 'Not yüklendi' : 'Notu kaydetmeye hazır');
+    } catch (error) {
+      console.error('Not silinemedi:', error);
+      showToast('Not silinemedi. Tekrar deneyebilirsin.');
+    }
+  }
+
+  function compressPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Fotoğraf dosyası okunamadı.'));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error('Seçilen dosya bir görsel olarak açılamadı.'));
+        image.onload = () => {
+          const scale = Math.min(1, 1800 / Math.max(image.width, image.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          const context = canvas.getContext('2d');
+          if (!context) {
+            reject(new Error('Fotoğraf işlenemedi.'));
+            return;
+          }
+          context.fillStyle = '#fff';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve({ dataUrl: canvas.toDataURL('image/jpeg', 0.86), aspect: canvas.width / canvas.height });
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function attachPhoto(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      showToast('Lütfen geçerli bir görsel dosyası seç.');
+      return;
+    }
+    const note = getCurrentNote();
+    if (!note) return;
+    setStatus('Fotoğraf hazırlanıyor…');
+    try {
+      const photo = await compressPhoto(file);
+      const attachment = {
+        id: `photo-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        dataUrl: photo.dataUrl,
+        aspect: photo.aspect,
+        width: 360,
+        visible: true,
+        free: false,
+        x: 0,
+        y: 0,
+        strokes: []
+      };
+      note.photos.push(attachment);
+      note.activePhotoId = attachment.id;
+      setDrawingTarget('photo', false);
+      await persistCurrentNote();
+      updateDrawingSurface();
+      setStatus('Fotoğraf nota eklendi');
+    } catch (error) {
+      console.error('Fotoğraf eklenemedi:', error);
+      setStatus('Fotoğraf eklenemedi', true);
+      showToast(error.message || 'Fotoğraf nota eklenemedi.');
+    } finally {
+      elements.photoInput.value = '';
+    }
+  }
+
+  async function removePhoto() {
+    const note = getCurrentNote();
+    const photo = getCurrentPhoto(note);
+    if (!note || !photo || !confirm('Seçili fotoğraf ve üzerindeki çizimler kaldırılsın mı?')) return;
+    note.photos = note.photos.filter((item) => item.id !== photo.id);
+    note.activePhotoId = note.photos[0]?.id || null;
+    if (!note.photos.some((item) => item.visible !== false)) setDrawingTarget('text', false);
+    await persistCurrentNote();
+    updateDrawingSurface();
+  }
+
+  function setDrawingTool(tool) {
+    activeTool = tool;
+    document.getElementById('penTool').classList.toggle('active', tool === 'pen');
+    document.getElementById('penTool').setAttribute('aria-pressed', String(tool === 'pen'));
+    document.getElementById('eraserTool').classList.toggle('active', tool === 'eraser');
+    document.getElementById('eraserTool').setAttribute('aria-pressed', String(tool === 'eraser'));
+    document.getElementById('eraserModes').hidden = tool !== 'eraser';
+    const sizeInput = document.getElementById('penWidth');
+    const sizeLabel = document.getElementById('sizeMinLabel');
+    if (tool === 'eraser') {
+      sizeInput.min = '6';
+      sizeInput.max = '60';
+      sizeInput.value = String(eraserWidth);
+      sizeInput.setAttribute('aria-label', 'Silgi boyutu');
+      sizeLabel.textContent = 'Küçük';
+      document.getElementById('penWidthValue').textContent = `${eraserWidth} px`;
+    } else {
+      sizeInput.min = '2';
+      sizeInput.max = '18';
+      sizeInput.value = String(penWidth);
+      sizeInput.setAttribute('aria-label', 'Kalem kalınlığı');
+      sizeLabel.textContent = 'İnce';
+      document.getElementById('penWidthValue').textContent = `${penWidth} px`;
+    }
+    updateDrawingSurface();
+  }
+
+  function setEraserMode(mode) {
+    eraserMode = mode;
+    document.getElementById('eraseStrokeMode').classList.toggle('active', mode === 'stroke');
+    document.getElementById('eraseStrokeMode').setAttribute('aria-pressed', String(mode === 'stroke'));
+    document.getElementById('erasePartMode').classList.toggle('active', mode === 'part');
+    document.getElementById('erasePartMode').setAttribute('aria-pressed', String(mode === 'part'));
+  }
+
+  function setDrawingTarget(target, refresh = true) {
+    activeTarget = target;
+    document.getElementById('textTarget').classList.toggle('active', target === 'text');
+    document.getElementById('textTarget').setAttribute('aria-pressed', String(target === 'text'));
+    document.getElementById('photoTarget').classList.toggle('active', target === 'photo');
+    document.getElementById('photoTarget').setAttribute('aria-pressed', String(target === 'photo'));
+    if (refresh) updateDrawingSurface();
+  }
+
+  function pointFromEvent(event, svg) {
+    const rect = svg.getBoundingClientRect();
+    return { x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)), y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)) };
+  }
+
+  function drawPointerDown(event) {
+    if (activeTool === 'off' || !currentNoteId || event.button !== 0) return;
+    const svg = event.currentTarget;
+    const note = getCurrentNote();
+    if (!note) return;
+    const target = svg === elements.textSvg ? 'text' : 'photo';
+    const photoId = target === 'photo' ? svg.dataset.photoId : null;
+    setDrawingTarget(target, false);
+    const strokes = getDrawingStrokes(note, activeTarget, photoId);
+    drawing = {
+      svg,
+      noteId: note.id,
+      target: activeTarget,
+      tool: activeTool,
+      eraserMode,
+      eraserWidth,
+      photoId,
+      points: [pointFromEvent(event, svg)],
+      originalStrokes: activeTool === 'eraser'
+        ? strokes.map((stroke) => ({ ...stroke, points: stroke.points.map((point) => ({ ...point })) }))
+        : null
+    };
+    svg.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    if (drawing.tool === 'pen') {
+      const stroke = { id: `stroke-${Date.now()}-${Math.random().toString(16).slice(2)}`, points: drawing.points, color: activeColor, width: penWidth };
+      drawing.stroke = stroke;
+      strokes.push(stroke);
+      setDrawingStrokes(note, activeTarget, strokes, photoId);
+      renderStrokes(svg, strokes);
+    } else {
+      previewErasure(drawing, note);
+    }
+  }
+
+  function drawPointerMove(event) {
+    if (!drawing) return;
+    const point = pointFromEvent(event, drawing.svg);
+    const prior = drawing.points[drawing.points.length - 1];
+    const rect = drawing.svg.getBoundingClientRect();
+    if (Math.hypot((point.x - prior.x) * rect.width, (point.y - prior.y) * rect.height) < 2) return;
+    drawing.points.push(point);
+    const note = notes.find((item) => item.id === drawing.noteId);
+    if (!note) return;
+    const strokes = getDrawingStrokes(note, drawing.target, drawing.photoId);
+    if (drawing.tool === 'pen' && drawing.stroke) {
+      drawing.stroke.points = drawing.points;
+      renderStrokes(drawing.svg, strokes);
+    } else if (drawing.tool === 'eraser') {
+      previewErasure(drawing, note);
+    }
+  }
+
+  function previewErasure(activeDrawing, note) {
+    const previewStrokes = activeDrawing.originalStrokes.map((stroke) => ({ ...stroke, points: stroke.points.map((point) => ({ ...point })) }));
+    const previewNote = activeDrawing.target === 'text'
+      ? { textStrokes: previewStrokes }
+      : { activePhotoId: activeDrawing.photoId, photos: [{ id: activeDrawing.photoId, strokes: previewStrokes }] };
+    eraseNearPointer(previewNote, activeDrawing.target, activeDrawing.svg, activeDrawing.points, activeDrawing.eraserMode, activeDrawing.eraserWidth);
+    renderStrokes(activeDrawing.svg, getDrawingStrokes(previewNote, activeDrawing.target, activeDrawing.photoId));
+  }
+
+  function distanceToSegment(point, start, end, rect) {
+    const px = point.x * rect.width;
+    const py = point.y * rect.height;
+    const sx = start.x * rect.width;
+    const sy = start.y * rect.height;
+    const ex = end.x * rect.width;
+    const ey = end.y * rect.height;
+    const dx = ex - sx;
+    const dy = ey - sy;
+    const lengthSquared = dx * dx + dy * dy;
+    const ratio = lengthSquared ? Math.max(0, Math.min(1, ((px - sx) * dx + (py - sy) * dy) / lengthSquared)) : 0;
+    return Math.hypot(px - (sx + ratio * dx), py - (sy + ratio * dy));
+  }
+
+  function eraseNearPointer(note, target, svg, erasePoints, mode, size, photoId = note.activePhotoId) {
+    let strokes = getDrawingStrokes(note, target, photoId);
+    const rect = svg.getBoundingClientRect();
+    const radius = size / 2;
+    const intersects = (stroke, start, end) => {
+      const strokeWidth = stroke.width * Math.min(rect.width, rect.height) / 1000;
+      return erasePoints.some((point) => distanceToSegment(point, start, end, rect) <= radius + strokeWidth / 2);
+    };
+
+    if (mode === 'stroke') {
+      strokes = strokes.filter((stroke) => {
+        if (stroke.points.length === 1) return !intersects(stroke, stroke.points[0], stroke.points[0]);
+        for (let index = 1; index < stroke.points.length; index += 1) {
+          if (intersects(stroke, stroke.points[index - 1], stroke.points[index])) return false;
+        }
+        return true;
+      });
+    } else {
+      const remainingStrokes = [];
+      strokes.forEach((stroke) => {
+        const removed = stroke.points.map(() => false);
+        if (stroke.points.length === 1) {
+          removed[0] = intersects(stroke, stroke.points[0], stroke.points[0]);
+        } else {
+          for (let index = 1; index < stroke.points.length; index += 1) {
+            if (intersects(stroke, stroke.points[index - 1], stroke.points[index])) {
+              removed[index - 1] = true;
+              removed[index] = true;
+            }
+          }
+        }
+
+        let segmentPoints = [];
+        const saveSegment = () => {
+          if (segmentPoints.length > 1) {
+            remainingStrokes.push({ ...stroke, id: `${stroke.id}-part-${remainingStrokes.length}`, points: segmentPoints });
+          }
+          segmentPoints = [];
+        };
+        stroke.points.forEach((point, index) => {
+          if (removed[index]) {
+            saveSegment();
+          } else {
+            segmentPoints.push(point);
+          }
+        });
+        saveSegment();
+      });
+      strokes = remainingStrokes;
+    }
+
+    setDrawingStrokes(note, target, strokes, photoId);
+    renderStrokes(svg, strokes);
+  }
+
+  async function drawPointerUp(event) {
+    if (!drawing) return;
+    const completedDrawing = drawing;
+    const note = notes.find((item) => item.id === completedDrawing.noteId);
+    if (note && completedDrawing.tool === 'eraser') {
+      if (event?.type === 'pointerup') {
+        const finalPoint = pointFromEvent(event, completedDrawing.svg);
+        const previousPoint = completedDrawing.points[completedDrawing.points.length - 1];
+        const rect = completedDrawing.svg.getBoundingClientRect();
+        if (Math.hypot((finalPoint.x - previousPoint.x) * rect.width, (finalPoint.y - previousPoint.y) * rect.height) >= 2) {
+          completedDrawing.points.push(finalPoint);
+        }
+      }
+      setDrawingStrokes(note, completedDrawing.target, completedDrawing.originalStrokes.map((stroke) => ({ ...stroke, points: stroke.points.map((point) => ({ ...point })) })), completedDrawing.photoId);
+      eraseNearPointer(note, completedDrawing.target, completedDrawing.svg, completedDrawing.points, completedDrawing.eraserMode, completedDrawing.eraserWidth, completedDrawing.photoId);
+    }
+    drawing = null;
+    await persistCurrentNote();
+  }
+
+  function setPhotoWidth(photoId, width) {
+    const note = getCurrentNote();
+    const photo = note?.photos?.find((item) => item.id === photoId);
+    if (!photo) return;
+    photo.width = width;
+    const surface = getPhotoSurface(photoId);
+    if (!surface) return;
+    surface.style.setProperty('--photo-width', `${width}px`);
+    const maxLeft = Math.max(0, elements.workspace.clientWidth - surface.offsetWidth);
+    photo.x = Math.min(Number(photo.x) || 0, maxLeft);
+    if (photo.free) {
+      surface.style.left = `${photo.x}px`;
+      elements.workspace.style.minHeight = `${Math.max(elements.textSurface.offsetHeight, (Number(photo.y) || 0) + surface.offsetHeight)}px`;
+    }
+  }
+
+  function startPhotoDrag(event) {
+    const surface = event.target.closest('.photo-surface');
+    if (!surface || event.target.closest('.photo-resize-handle') || activeTool !== 'off' || event.button !== 0) return;
+    const note = getCurrentNote();
+    const photo = note?.photos?.find((item) => item.id === surface.dataset.photoId);
+    if (!photo) return;
+    const workspaceRect = elements.workspace.getBoundingClientRect();
+    const photoRect = surface.getBoundingClientRect();
+    const originLeft = photoRect.left - workspaceRect.left;
+    const originTop = photoRect.top - workspaceRect.top;
+    const wasFree = photo.free;
+    photo.free = true;
+    elements.workspace.style.minHeight = `${Math.max(elements.textSurface.offsetHeight, originTop + photoRect.height)}px`;
+    surface.classList.add('is-free');
+    surface.style.left = `${originLeft}px`;
+    surface.style.top = `${originTop}px`;
+    photoDrag = {
+      pointerId: event.pointerId,
+      photoId: photo.id,
+      surface,
+      startX: event.clientX,
+      startY: event.clientY,
+      originLeft,
+      originTop,
+      textHeight: elements.textSurface.offsetHeight,
+      photoHeight: photoRect.height,
+      moved: false,
+      frame: null
+    };
+    surface.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  function movePhotoDrag(event) {
+    if (photoResize) {
+      const width = Math.min(1200, Math.max(100, photoResize.startWidth + event.clientX - photoResize.startX));
+      setPhotoWidth(photoResize.photoId, width);
+      event.preventDefault();
+      return;
+    }
+    if (!photoDrag) return;
+    photoDrag.latestX = event.clientX;
+    photoDrag.latestY = event.clientY;
+    photoDrag.moved = photoDrag.moved || Math.hypot(event.clientX - photoDrag.startX, event.clientY - photoDrag.startY) > 5;
+    if (photoDrag.frame !== null) return;
+    photoDrag.frame = requestAnimationFrame(() => {
+      if (!photoDrag) return;
+      photoDrag.frame = null;
+      const maxLeft = Math.max(0, elements.workspace.clientWidth - photoDrag.surface.offsetWidth);
+      const left = Math.min(Math.max(0, photoDrag.originLeft + photoDrag.latestX - photoDrag.startX), maxLeft);
+      const top = Math.max(0, photoDrag.originTop + photoDrag.latestY - photoDrag.startY);
+      photoDrag.surface.style.transform = `translate3d(${left - photoDrag.originLeft}px, ${top - photoDrag.originTop}px, 0)`;
+      const visibleFreePhotos = getCurrentNote()?.photos
+        .filter((item) => item.visible !== false && item.free)
+        .map((item) => {
+          const surface = getPhotoSurface(item.id);
+          return surface ? (item.id === photoDrag.photoId ? top + photoDrag.photoHeight : Number(item.y) + surface.offsetHeight) : 0;
+        }) || [];
+      elements.workspace.style.minHeight = `${Math.max(photoDrag.textHeight, ...visibleFreePhotos)}px`;
+      const photo = getCurrentNote()?.photos.find((item) => item.id === photoDrag.photoId);
+      if (photo) {
+        photo.x = left;
+        photo.y = top;
+      }
+    });
+  }
+
+  async function finishPhotoDrag(event) {
+    if (photoResize) {
+      if (event?.pointerId != null && event.pointerId !== photoResize.pointerId) return;
+      photoResize = null;
+      await persistCurrentNote();
+      return;
+    }
+    if (!photoDrag || (event?.pointerId != null && event.pointerId !== photoDrag.pointerId)) return;
+    const drag = photoDrag;
+    photoDrag = null;
+    if (drag.frame !== null) cancelAnimationFrame(drag.frame);
+    const note = getCurrentNote();
+    const photo = note?.photos.find((item) => item.id === drag.photoId);
+    if (!photo) return;
+    if (!drag.moved) {
+      photo.free = false;
+      drag.surface.classList.remove('is-free');
+      drag.surface.style.left = '';
+      drag.surface.style.top = '';
+      drag.surface.style.transform = '';
+      const requiredHeight = note.photos.reduce((height, item) => {
+        if (item.id === photo.id || item.visible === false || !item.free) return height;
+        const surface = getPhotoSurface(item.id);
+        return surface ? Math.max(height, Number(item.y) + surface.offsetHeight) : height;
+      }, drag.textHeight);
+      elements.workspace.style.minHeight = requiredHeight > drag.textHeight ? `${requiredHeight}px` : '';
+      photo.x = 0;
+      photo.y = 0;
+      persistCurrentNote();
+      return;
+    }
+    const maxLeft = Math.max(0, elements.workspace.clientWidth - drag.surface.offsetWidth);
+    const finalLeft = Math.min(Math.max(0, drag.originLeft + event.clientX - drag.startX), maxLeft);
+    const finalTop = Math.max(0, drag.originTop + event.clientY - drag.startY);
+    drag.surface.style.left = `${finalLeft}px`;
+    drag.surface.style.top = `${finalTop}px`;
+    drag.surface.style.transform = '';
+    const otherBottom = note.photos.reduce((bottom, item) => {
+      if (item.id === photo.id || item.visible === false || !item.free) return bottom;
+      const surface = getPhotoSurface(item.id);
+      return surface ? Math.max(bottom, Number(item.y) + surface.offsetHeight) : bottom;
+    }, 0);
+    elements.workspace.style.minHeight = `${Math.max(drag.textHeight, finalTop + drag.photoHeight, otherBottom)}px`;
+    photo.x = finalLeft;
+    photo.y = finalTop;
+    await persistCurrentNote();
+  }
+
+  function startPhotoResize(event) {
+    const surface = event.currentTarget.closest('.photo-surface');
+    if (!surface || event.button !== 0 || activeTool !== 'off') return;
+    photoResize = {
+      photoId: surface.dataset.photoId,
+      surface,
+      startX: event.clientX,
+      startWidth: surface.getBoundingClientRect().width,
+      pointerId: event.pointerId
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function openDrawingTools() {
+    if (!currentNoteId) {
+      showToast('Önce bir not oluştur.');
+      return;
+    }
+    if (activeTool === 'off') setDrawingTool('pen');
+    document.getElementById('openDrawingPanel').classList.add('hidden');
+    elements.panel.classList.remove('hidden');
+    elements.panelControls.hidden = false;
+    if (activeTarget === 'photo' && !getCurrentPhoto()) setDrawingTarget('text');
+    updateDrawingSurface();
+  }
+
+  function closeDrawingTools() {
+    activeTool = 'off';
+    elements.panel.classList.add('hidden');
+    elements.panel.style.left = '';
+    elements.panel.style.top = '';
+    elements.panel.style.right = '22px';
+    elements.panel.style.bottom = '22px';
+    updateDrawingSurface();
+  }
+
+  function clearActiveDrawing() {
+    const note = getCurrentNote();
+    if (!note) return;
+    const strokes = getDrawingStrokes(note, activeTarget);
+    if (!strokes.length) return;
+    if (!confirm('Bu alandaki tüm çizimler silinsin mi?')) return;
+    setDrawingStrokes(note, activeTarget, []);
+    updateDrawingSurface();
+    persistCurrentNote();
+  }
+
+  function setupPalette() {
+    const picker = document.getElementById('drawingColors');
+    palette.forEach((color) => {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'color-swatch';
+      swatch.style.backgroundColor = color;
+      swatch.setAttribute('aria-label', `Kalem rengi ${color}`);
+      swatch.setAttribute('aria-pressed', String(color === activeColor));
+      swatch.addEventListener('click', () => {
+        activeColor = color;
+        picker.querySelectorAll('.color-swatch').forEach((button) => button.setAttribute('aria-pressed', String(button === swatch)));
+      });
+      picker.appendChild(swatch);
+    });
+  }
+
+  function beginPanelDrag(event) {
+    if (event.target.closest('button')) return;
+    const rect = elements.panel.getBoundingClientRect();
+    panelDrag = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    elements.panel.style.left = `${rect.left}px`;
+    elements.panel.style.top = `${rect.top}px`;
+    elements.panel.style.right = 'auto';
+    elements.panel.style.bottom = 'auto';
+    elements.panel.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  function movePanel(event) {
+    if (!panelDrag) return;
+    const width = elements.panel.offsetWidth;
+    const height = elements.panel.offsetHeight;
+    const left = Math.min(Math.max(8, event.clientX - panelDrag.x), window.innerWidth - width - 8);
+    const top = Math.min(Math.max(8, event.clientY - panelDrag.y), window.innerHeight - height - 8);
+    elements.panel.style.left = `${left}px`;
+    elements.panel.style.top = `${top}px`;
+  }
+
+  function applyTheme(theme) {
+    const value = theme === 'dark' ? 'dark' : 'light';
+    document.body.dataset.theme = value;
+    document.documentElement.style.colorScheme = value;
+    localStorage.setItem('planner-theme', value);
+    document.getElementById('themeText').textContent = value === 'dark' ? 'Açık' : 'Koyu';
+    document.getElementById('themeIcon').textContent = value === 'dark' ? '☀️' : '🌙';
+  }
+
+  document.getElementById('newNoteBtn').addEventListener('click', addNote);
+  document.getElementById('deleteNoteBtn').addEventListener('click', deleteCurrentNote);
+  document.getElementById('uploadPhotoBtn').addEventListener('click', () => elements.photoInput.click());
+  document.getElementById('replacePhotoBtn').addEventListener('click', () => elements.photoInput.click());
+  elements.photoInput.addEventListener('change', (event) => attachPhoto(event.target.files[0]));
+  elements.removePhoto.addEventListener('click', removePhoto);
+  elements.title.addEventListener('input', scheduleSave);
+  elements.body.addEventListener('input', scheduleSave);
+  elements.search.addEventListener('input', renderNoteList);
+  document.getElementById('openDrawingPanel').addEventListener('click', openDrawingTools);
+  document.getElementById('closeDrawingPanel').addEventListener('click', closeDrawingTools);
+  document.getElementById('collapseDrawingPanel').addEventListener('click', () => {
+    elements.panelControls.hidden = !elements.panelControls.hidden;
+    document.getElementById('collapseDrawingPanel').textContent = elements.panelControls.hidden ? '+' : '−';
+  });
+  document.getElementById('penTool').addEventListener('click', () => setDrawingTool('pen'));
+  document.getElementById('eraserTool').addEventListener('click', () => setDrawingTool('eraser'));
+  document.getElementById('textTarget').addEventListener('click', () => setDrawingTarget('text'));
+  document.getElementById('photoTarget').addEventListener('click', () => getCurrentPhoto() && setDrawingTarget('photo'));
+  document.getElementById('clearDrawingBtn').addEventListener('click', clearActiveDrawing);
+  document.getElementById('penWidth').addEventListener('input', (event) => {
+    const size = Number(event.target.value);
+    if (activeTool === 'eraser') eraserWidth = size;
+    else penWidth = size;
+    document.getElementById('penWidthValue').textContent = `${size} px`;
+  });
+  document.getElementById('eraseStrokeMode').addEventListener('click', () => setEraserMode('stroke'));
+  document.getElementById('erasePartMode').addEventListener('click', () => setEraserMode('part'));
+  elements.photoSurfaces.addEventListener('pointerdown', startPhotoDrag);
+  window.addEventListener('pointermove', movePhotoDrag);
+  window.addEventListener('pointerup', finishPhotoDrag);
+  window.addEventListener('pointercancel', finishPhotoDrag);
+  [elements.textSvg].forEach((svg) => {
+    svg.addEventListener('pointerdown', drawPointerDown);
+    svg.addEventListener('pointermove', drawPointerMove);
+    svg.addEventListener('pointerup', drawPointerUp);
+    svg.addEventListener('pointercancel', drawPointerUp);
+  });
+  document.getElementById('drawingPanelHeader').addEventListener('pointerdown', beginPanelDrag);
+  elements.panel.addEventListener('pointermove', movePanel);
+  elements.panel.addEventListener('pointerup', () => { panelDrag = null; });
+  elements.panel.addEventListener('pointercancel', () => { panelDrag = null; });
+  themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
+  window.addEventListener('pagehide', flushSave);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
+
+  async function initialize() {
+    applyTheme(localStorage.getItem('planner-theme') || 'light');
+    setupPalette();
+    try {
+      database = await openDatabase();
+      notes = await storeRequest('readonly', (store) => store.getAll());
+      const needsPhotoMigration = notes.filter((note) => !Array.isArray(note.photos));
+      const needsLayoutMigration = notes.filter((note) => note.photoLayoutVersion !== 3);
+      const needsVisibilityMigration = notes.filter((note) => Array.isArray(note.photos) && note.photos.some((photo) => typeof photo.visible !== 'boolean'));
+      needsPhotoMigration.forEach((note) => {
+        const legacyPhoto = note.photo ? [{
+          id: `photo-legacy-${note.id}`,
+          dataUrl: note.photo,
+          width: note.photoWidth || 360,
+          aspect: note.photoAspect || 1,
+          free: Boolean(note.photoFree),
+          x: note.photoX || 0,
+          y: note.photoY || 0,
+          visible: true,
+          strokes: note.photoStrokes || []
+        }] : [];
+        note.photos = legacyPhoto;
+        note.activePhotoId = legacyPhoto[0]?.id || null;
+        delete note.photo;
+        delete note.photoWidth;
+        delete note.photoAspect;
+        delete note.photoFree;
+        delete note.photoX;
+        delete note.photoY;
+        delete note.photoStrokes;
+      });
+      needsLayoutMigration.forEach((note) => {
+        note.photos.forEach((photo) => {
+          if (!photo.width) photo.width = 360;
+          if (!photo.aspect) photo.aspect = 1;
+          photo.free = false;
+          photo.x = 0;
+          photo.y = 0;
+          photo.visible = true;
+        });
+        note.photoLayoutVersion = 3;
+      });
+      needsVisibilityMigration.forEach((note) => note.photos.forEach((photo) => {
+        if (typeof photo.visible !== 'boolean') photo.visible = true;
+      }));
+      const changedNotes = [...new Set([...needsPhotoMigration, ...needsLayoutMigration, ...needsVisibilityMigration])];
+      if (changedNotes.length) {
+        const transaction = database.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        changedNotes.forEach((note) => store.put(note));
+        await new Promise((resolve, reject) => {
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error || new Error('Fotoğraf yerleşimi güncellenemedi.'));
+          transaction.onabort = () => reject(transaction.error || new Error('Fotoğraf yerleşimi güncellemesi iptal edildi.'));
+        });
+      }
+      notes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      currentNoteId = notes[0]?.id || null;
+      renderNoteList();
+      updateDrawingSurface();
+      setStatus(currentNoteId ? 'Not yüklendi' : 'Notlarını kaydetmeye hazır');
+    } catch (error) {
+      console.error('Notlar yüklenemedi:', error);
+      setStatus('Notlar yüklenemedi', true);
+      showToast('Not saklama alanı açılamadı. Sayfayı bir web sunucusu üzerinden açmayı deneyebilirsin.');
+      document.getElementById('newNoteBtn').disabled = true;
+    }
+  }
+
+  initialize();
+</script>
+</body>
+</html>
