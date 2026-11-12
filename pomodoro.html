@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f3f6fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Yörünge">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
 <link rel="icon" type="image/png" href="assets/yorunge-emblem.png">
+<script src="app-tools.js" defer></script>
+<script src="pwa.js" defer></script>
 <title>Yörünge — Pomodoro</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -28,7 +34,7 @@
   body[data-theme="dark"] .subtitle { color: #94a3b8; }
   .theme-toggle,.secondary-btn,.primary-btn,.icon-btn { border: 1px solid rgba(148,163,184,.2); border-radius: 11px; padding: 10px 14px; cursor: pointer; font-weight: 700; transition: transform .15s ease,filter .15s ease; }
   .theme-toggle,.secondary-btn,.icon-btn { background: rgba(148,163,184,.13); color: inherit; }
-  .theme-toggle { position: fixed; top: 18px; right: 18px; z-index: 50; border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,.8); color: #0f172a; font-size: 12px; letter-spacing: .02em; box-shadow: 0 12px 24px rgba(15,23,42,.12); }
+  .theme-toggle { position: static; flex-shrink: 0; border-radius: 999px; padding: 10px 14px; background: rgba(255,255,255,.8); color: #0f172a; font-size: 12px; letter-spacing: .02em; box-shadow: 0 12px 24px rgba(15,23,42,.12); }
   body[data-theme="dark"] .theme-toggle { border-color: rgba(148,163,184,.18); background: rgba(15,23,42,.8); color: #f8fafc; }
   .theme-toggle:hover,.secondary-btn:hover,.primary-btn:hover,.icon-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
   .primary-btn { border: 0; background: linear-gradient(135deg,#2563eb,#1e3a8a); color: white; box-shadow: 0 10px 20px rgba(37,99,235,.2); }
@@ -87,7 +93,7 @@
 <body data-theme="light">
 <div class="page">
   <nav class="nav-bar" aria-label="Ana gezinme">
-    <a href="index.html" class="brand-link" aria-label="Yörünge ana sayfa"><img src="assets/yorunge-emblem.png" alt=""><span>Yörünge</span></a>
+    <a href="home.html" class="brand-link" aria-label="Yörünge giriş sayfası"><img src="assets/yorunge-emblem.png" alt=""><span>Yörünge</span></a>
     <a href="index.html" class="nav-btn">📐 Soru Çözücü</a>
     <a href="planlayici.html" class="nav-btn">📅 Haftalık Program</a>
     <a href="notlar.html" class="nav-btn">📝 Notlar</a>
@@ -146,6 +152,7 @@
   const PROFILE_KEY = 'pomo_profiles';
   const HISTORY_KEY = 'pomo_history';
   const ACTIVE_PROFILE_KEY = 'pomo_active_profile';
+  const TIMER_STATE_KEY = 'pomo_timer_state_v1';
   const MODES = {
     work: { label: 'Odaklanma', input: 'workTime', defaultMinutes: 25 },
     short: { label: 'Kısa mola', input: 'shortBreak', defaultMinutes: 5 },
@@ -212,6 +219,60 @@
   let isRunning = false;
   let elapsedSeconds = 0;
   let segmentStartedAt = null;
+
+  function isValidTimerState(value) {
+    return value
+      && typeof value === 'object'
+      && typeof value.profile === 'string'
+      && Object.prototype.hasOwnProperty.call(MODES, value.mode)
+      && Number.isFinite(value.remainingSeconds)
+      && value.remainingSeconds >= 0
+      && typeof value.isRunning === 'boolean'
+      && Number.isFinite(value.elapsedSeconds)
+      && value.elapsedSeconds >= 0
+      && (value.deadline === null || Number.isFinite(value.deadline))
+      && (value.segmentStartedAt === null || Number.isFinite(value.segmentStartedAt))
+      && (!value.isRunning || (Number.isFinite(value.deadline) && Number.isFinite(value.segmentStartedAt)));
+  }
+
+  function saveTimerState() {
+    const savedRemainingSeconds = isRunning && deadline !== null
+      ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+      : remainingSeconds;
+    localStorage.setItem(TIMER_STATE_KEY, JSON.stringify({
+      profile: activeProfile,
+      mode: currentMode,
+      remainingSeconds: savedRemainingSeconds,
+      deadline,
+      isRunning,
+      elapsedSeconds,
+      segmentStartedAt
+    }));
+  }
+
+  function restoreTimerState() {
+    const saved = readJson(TIMER_STATE_KEY, null, isValidTimerState);
+    if (!saved) return false;
+
+    if (profiles[saved.profile]) {
+      activeProfile = saved.profile;
+      localStorage.setItem(ACTIVE_PROFILE_KEY, activeProfile);
+    }
+    currentMode = saved.mode;
+    remainingSeconds = saved.remainingSeconds;
+    deadline = saved.deadline;
+    isRunning = saved.isRunning;
+    elapsedSeconds = saved.elapsedSeconds;
+    segmentStartedAt = saved.segmentStartedAt;
+
+    if (isRunning && deadline !== null) {
+      remainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    }
+
+    setStatus(isRunning ? 'Oturum devam ediyor' : 'Duraklatıldı');
+    return true;
+  }
+
   function showToast(message) {
     elements.toast.textContent = message;
     elements.toast.hidden = false;
@@ -224,7 +285,8 @@
   }
 
   function getActiveElapsedSeconds(now = Date.now()) {
-    return elapsedSeconds + (isRunning && segmentStartedAt !== null ? Math.max(0, Math.floor((now - segmentStartedAt) / 1000)) : 0);
+    const activeNow = isRunning && deadline !== null ? Math.min(now, deadline) : now;
+    return elapsedSeconds + (isRunning && segmentStartedAt !== null ? Math.max(0, Math.floor((activeNow - segmentStartedAt) / 1000)) : 0);
   }
 
   function formatTime(seconds) {
@@ -285,6 +347,7 @@
     updateModeButtons();
     setStatus('Başlamaya hazır');
     updateDisplay();
+    saveTimerState();
   }
 
   function saveHistoryEntry() {
@@ -351,6 +414,7 @@
     elements.alarm.currentTime = 0;
     elements.alarm.play().catch(() => playFallbackAlarm());
     showToast(`${MODES[currentMode].label} oturumu tamamlandı.`);
+    saveTimerState();
   }
 
   function tick() {
@@ -380,6 +444,7 @@
       setStatus('Oturum devam ediyor');
     }
     updateDisplay();
+    saveTimerState();
   }
 
   function resetTimer() {
@@ -390,6 +455,7 @@
     remainingSeconds = profiles[activeProfile][currentMode] * 60;
     setStatus('Başlamaya hazır');
     updateDisplay();
+    saveTimerState();
   }
 
   function addExtra(minutes) {
@@ -408,6 +474,7 @@
     if (isRunning) deadline += addedMinutes * 60 * 1000;
     if (remainingSeconds > 0) setStatus(isRunning ? 'Oturum devam ediyor' : 'Ek süre eklendi');
     updateDisplay();
+    saveTimerState();
   }
 
   function deleteActiveProfile() {
@@ -537,12 +604,18 @@
       applyTheme(event.newValue || 'light');
     }
   });
+  window.addEventListener('pagehide', saveTimerState);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveTimerState();
+  });
 
+  const restoredTimerState = restoreTimerState();
   renderProfiles();
   syncInputs();
   renderHistory();
   updateModeButtons();
   updateDisplay();
+  if (!restoredTimerState) saveTimerState();
   const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
     || localStorage.getItem('solver-theme')
     || localStorage.getItem('planner-theme')

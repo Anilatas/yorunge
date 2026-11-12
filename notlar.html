@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Yörünge">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
 <link rel="icon" type="image/png" href="assets/yorunge-emblem.png">
+<script src="app-tools.js" defer></script>
+<script src="pwa.js" defer></script>
 <title>Yörünge — Ders Notları</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -65,10 +72,8 @@
   }
   .theme-toggle, .secondary-btn { background: rgba(148,163,184,0.14); color: inherit; }
   .theme-toggle {
-    position: fixed;
-    top: 18px;
-    right: 18px;
-    z-index: 50;
+    position: static;
+    flex-shrink: 0;
     border: 1px solid rgba(148,163,184,0.2);
     border-radius: 999px;
     padding: 10px 14px;
@@ -236,7 +241,7 @@
 <body data-theme="light">
 <div class="container">
   <nav class="nav-bar" aria-label="Ana gezinme">
-    <a href="index.html" class="brand-link" aria-label="Yörünge ana sayfa"><img src="assets/yorunge-emblem.png" alt=""><span>Yörünge</span></a>
+    <a href="home.html" class="brand-link" aria-label="Yörünge giriş sayfası"><img src="assets/yorunge-emblem.png" alt=""><span>Yörünge</span></a>
     <a href="index.html" class="nav-btn">📐 Soru Çözücü</a>
     <a href="planlayici.html" class="nav-btn">📅 Haftalık Program</a>
     <a href="notlar.html" class="nav-btn active" aria-current="page">📝 Notlar</a>

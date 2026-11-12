@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Yörünge">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
+  <link rel="icon" type="image/png" href="assets/yorunge-emblem.png">
+  <script src="app-tools.js" defer></script>
+  <script src="pwa.js" defer></script>
+  <title>Yörünge — Ders Çalışma Alanın</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; background: radial-gradient(ellipse at 50% -10%, #1e3a8a 0, #111827 40%, #020617 100%); color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    a { color: inherit; }
+    .page { width: min(1120px, 100%); margin: 0 auto; padding: 22px 24px 40px; }
+    .nav-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid rgba(148,163,184,.18); }
+    .brand-link { display: inline-flex; align-items: center; gap: 9px; margin-right: 8px; color: #f8fafc; font-size: 17px; font-weight: 800; letter-spacing: -.02em; text-decoration: none; white-space: nowrap; }
+    .brand-link img { display: block; width: 34px; height: 34px; border-radius: 12px; object-fit: cover; }
+    .nav-btn { display: inline-flex; padding: 9px 13px; border: 1px solid rgba(148,163,184,.2); border-radius: 11px; background: rgba(30,41,59,.8); color: #cbd5e1; font-size: 12px; font-weight: 700; text-decoration: none; }
+    .hero { display: grid; justify-items: center; padding: clamp(72px, 14vh, 140px) 0 56px; text-align: center; }
+    .hero-logo { width: 76px; height: 76px; margin-bottom: 20px; border: 1px solid rgba(147,197,253,.28); border-radius: 25px; box-shadow: 0 16px 48px rgba(37,99,235,.22); }
+    .eyebrow { margin: 0 0 12px; color: #93c5fd; font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 0; color: #f8fafc; font-size: clamp(38px, 8vw, 66px); letter-spacing: -.055em; }
+    .hero-copy { max-width: 580px; margin: 16px 0 0; color: #aab8cf; font-size: 16px; line-height: 1.7; }
+    .slogan { margin: 9px 0 0; color: #64748b; font-size: 12px; }
+    .tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
+    .tool-card { min-height: 150px; padding: 20px; border: 1px solid rgba(148,163,184,.16); border-radius: 18px; background: rgba(15,23,42,.58); text-decoration: none; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+    .tool-card:hover { transform: translateY(-3px); border-color: rgba(96,165,250,.55); background: rgba(30,41,59,.82); }
+    .tool-icon { display: block; margin-bottom: 13px; font-size: 25px; }
+    .tool-card strong { display: block; margin-bottom: 6px; color: #f1f5f9; font-size: 14px; }
+    .tool-card span:last-child { color: #94a3b8; font-size: 12px; line-height: 1.5; }
+    @media (max-width: 760px) { .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 460px) { .page { padding: 16px 14px 28px; } .tools { grid-template-columns: 1fr; } .tool-card { min-height: 0; } }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="page">
+    <nav class="nav-bar" aria-label="Ana gezinme">
+      <a href="home.html" class="brand-link" aria-label="Yörünge giriş sayfası"><img src="assets/yorunge-emblem.png" alt=""><span>Yörünge</span></a>
+      <a href="index.html" class="nav-btn">📐 Soru Çözücü</a>
+      <a href="planlayici.html" class="nav-btn">📅 Haftalık Program</a>
+      <a href="notlar.html" class="nav-btn">📝 Notlar</a>
+      <a href="pomodoro.html" class="nav-btn">⏱️ Pomodoro</a>
+    </nav>
+    <main>
+      <section class="hero" aria-labelledby="welcomeTitle">
+        <img class="hero-logo" src="assets/yorunge-emblem.png" alt="">
+        <p class="eyebrow">Ders çalışma alanın</p>
+        <h1 id="welcomeTitle">Yörünge</h1>
+        <p class="hero-copy">Programını düzenle, notlarını biriktir ve odak zamanını yönet. İhtiyacın olan çalışma araçları tek bir yerde.</p>
+        <p class="slogan">Farklı araçlarla kendi ders çalışma yörüngeni oluştur.</p>
+      </section>
+      <section class="tools" aria-label="Çalışma araçları">
+        <a class="tool-card" href="planlayici.html"><span class="tool-icon" aria-hidden="true">📅</span><strong>Haftalık Program</strong><span>Haftanı planla ve ilerlemeni takip et.</span></a>
+        <a class="tool-card" href="notlar.html"><span class="tool-icon" aria-hidden="true">📝</span><strong>Ders Notları</strong><span>Notlarını yaz, fotoğraf ekle ve çizim yap.</span></a>
+        <a class="tool-card" href="pomodoro.html"><span class="tool-icon" aria-hidden="true">⏱️</span><strong>Pomodoro</strong><span>Odaklanma oturumlarını başlat ve kaydet.</span></a>
+        <a class="tool-card" href="index.html"><span class="tool-icon" aria-hidden="true">📐</span><strong>Soru Çözücü</strong><span>Soru çözüm aracı şu anda bakımda.</span></a>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
