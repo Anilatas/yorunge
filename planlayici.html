@@ -126,7 +126,7 @@
   .progress-heading h2 { font-size: 16px; }
   .progress-heading p, .progress-note { color: #64748b; font-size: 11px; line-height: 1.5; }
   body[data-theme="dark"] .progress-heading p, body[data-theme="dark"] .progress-note { color: #94a3b8; }
-  .progress-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+  .progress-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
   .progress-card { padding: 12px; border: 1px solid rgba(148,163,184,0.16); border-radius: 12px; background: rgba(148,163,184,0.06); }
   .progress-card span { display: block; color: #64748b; font-size: 11px; }
   .progress-card strong { display: block; margin-top: 5px; color: #0f172a; font-size: 18px; }
@@ -161,6 +161,7 @@
   .view-controls { display: none; }
   .view-controls label { font-weight: 700; }
   .view-controls select { padding: 8px 10px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; background: rgba(15, 23, 42, 0.9); min-width: 120px; color: #e2e8f0; }
+  .mobile-day-nav { display: none; }
   .planner-history-toolbar { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
   .history-button, .current-week-button, .template-button { border: 1px solid rgba(148,163,184,0.22); border-radius: 11px; padding: 9px 13px; background: rgba(37,99,235,0.1); color: inherit; font-weight: 700; cursor: pointer; }
   .history-view-banner { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 12px; font-weight: 700; }
@@ -578,20 +579,30 @@
   .secondary-btn { background: rgba(148, 163, 184, 0.12); color: #e2e8f0; border: none; border-radius: 10px; padding: 9px 12px; font-weight: 700; cursor: pointer; }
 
   @media (max-width: 640px) {
-    .calendar-shell { overflow-x: auto; }
-    .schedule-grid { min-width: 520px; }
+    .container { width: 100%; padding: 14px 12px 24px; }
+    .progress-grid { gap: 6px; }
+    .progress-card { min-width: 0; padding: 8px 6px; }
+    .progress-card span { font-size: 9px; line-height: 1.25; }
+    .progress-card strong { font-size: 12px; overflow-wrap: anywhere; }
+    .mobile-day-nav { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 0 0 10px; }
+    .mobile-day-button { min-width: 0; padding: 8px 2px; border: 1px solid rgba(148,163,184,.24); border-radius: 9px; background: rgba(148,163,184,.08); color: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .mobile-day-button[aria-pressed="true"] { border-color: rgba(59,130,246,.55); background: rgba(59,130,246,.16); color: #1d4ed8; }
+    body[data-theme="dark"] .mobile-day-button[aria-pressed="true"] { color: #bfdbfe; }
+    .calendar-shell { overflow: visible; gap: 7px; }
+    .time-rail { flex-basis: 50px; width: 50px; }
+    .schedule-grid { min-width: 0; width: auto; flex: 1 1 0; }
+    .week-row { display: block; }
+    .day-column { display: none; }
+    .day-column.is-mobile-selected { display: block; }
     .planner-form { grid-template-columns: 1fr 1fr; }
     .field-wide { grid-column: span 2; }
-    .stats-bar { grid-template-columns: 1fr; }
-    .progress-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .stat-card { min-width: 0; padding: 9px 5px; }
+    .stat-card span { font-size: 9px; line-height: 1.25; }
+    .stat-card strong { font-size: 14px; overflow-wrap: anywhere; }
     .progress-heading { flex-direction: column; }
     .planner-history-toolbar { align-items: flex-start; flex-direction: column; }
     .history-week-row { grid-template-columns: 1fr; }
-    .schedule-grid[data-layout="52"] .week-row:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .schedule-grid[data-layout="52"] .week-row:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .schedule-grid[data-layout="43"] .week-row:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .schedule-grid[data-layout="43"] .week-row:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .schedule-grid[data-layout="7"] .week-row { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
   }
   @media (min-width: 641px) and (max-width: 1100px) {
     .schedule-grid[data-layout="7"] .week-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -726,6 +737,7 @@
       <button type="button" class="current-week-button" id="returnCurrentWeekBtn">Güncel haftaya dön</button>
     </div>
   </div>
+  <div class="mobile-day-nav" id="mobileDayNav" role="group" aria-label="Haftalık programda gün seçimi"></div>
   <div class="calendar-shell">
     <div class="time-rail" id="timeRail"></div>
     <div class="schedule-grid" id="scheduleGrid" data-layout="52"></div>
@@ -833,6 +845,8 @@
 
 <script>
   const daysOfWeek = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  const mobileDayLabels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+  let mobileSelectedDay = daysOfWeek[(new Date().getDay() + 6) % 7];
   const HISTORY_STORAGE_KEY = 'weekly_tasks_history';
   const WEEK_START_STORAGE_KEY = 'weekly_tasks_week_start';
   const TEMPLATE_STORAGE_KEY = 'weekly_task_templates';
@@ -2190,6 +2204,30 @@
     renderPlanner();
   }
 
+  function renderMobileDayNav(weekStart) {
+    const nav = document.getElementById('mobileDayNav');
+    nav.innerHTML = '';
+    getCurrentWeekDates(weekStart).forEach((dayMeta, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'mobile-day-button';
+      button.textContent = mobileDayLabels[index];
+      button.title = dayMeta.longDate;
+      button.setAttribute('aria-label', `${dayMeta.dayName}, ${dayMeta.longDate}`);
+      button.setAttribute('aria-pressed', String(dayMeta.dayName === mobileSelectedDay));
+      button.addEventListener('click', () => {
+        mobileSelectedDay = dayMeta.dayName;
+        nav.querySelectorAll('.mobile-day-button').forEach((dayButton) => {
+          dayButton.setAttribute('aria-pressed', String(dayButton === button));
+        });
+        document.querySelectorAll('.day-column').forEach((column) => {
+          column.classList.toggle('is-mobile-selected', column.dataset.day === mobileSelectedDay);
+        });
+      });
+      nav.appendChild(button);
+    });
+  }
+
   function renderPlanner() {
     const grid = document.getElementById('scheduleGrid');
     const timeRail = document.getElementById('timeRail');
@@ -2231,6 +2269,7 @@
         const col = document.createElement('div');
         col.className = 'day-column';
         col.dataset.day = day;
+        col.classList.toggle('is-mobile-selected', day === mobileSelectedDay);
         col.addEventListener('click', (event) => {
           if (viewingHistoryWeek) return;
           if (event.target.closest('.task-item') || event.target.closest('.task-card-btn')) return;
@@ -2360,6 +2399,7 @@
       grid.appendChild(row);
     });
 
+    renderMobileDayNav(displayedWeekStart);
     updateStats(displayedTasks);
     updateWeeklyProgress(displayedTasks, displayedWeekStart);
     analyzePlanner(displayedTasks);

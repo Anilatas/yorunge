@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yorunge-app-v2';
+const CACHE_NAME = 'yorunge-app-v3';
 const APP_SHELL = [
   './',
   './home.html',

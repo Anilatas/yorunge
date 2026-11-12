@@ -78,15 +78,17 @@
       .brand-tools-panel .nav-btn { width: 100%; justify-content: flex-start; background: rgba(148,163,184,.1); color: inherit; }
       .brand-tools-panel .nav-btn:hover, .brand-tools-home:hover { background: rgba(59,130,246,.13); }
       .pwa-install-btn { width: 42px; height: 42px; flex: 0 0 42px; margin-left: auto; padding: 0; border-radius: 12px; font-size: 22px; }
-      .task-complete-btn { position: absolute; top: 7px; right: 7px; z-index: 3; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: transparent; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background .15s ease, color .15s ease; }
-      .task-complete-btn:not([aria-pressed="true"]):hover { background: rgba(148,163,184,.12); color: #94a3b8; }
-      .task-complete-btn[aria-pressed="true"] { background: transparent; color: #64748b; box-shadow: none; }
-      body[data-theme="dark"] .task-complete-btn[aria-pressed="true"] { color: #cbd5e1; }
+      .task-complete-btn { position: absolute; top: 7px; right: 7px; z-index: 3; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 1px solid rgba(71,85,105,.32); border-radius: 6px; background: rgba(255,255,255,.28); color: transparent; font-size: 16px; font-weight: 600; line-height: 1; cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+      .task-complete-btn:not([aria-pressed="true"]):hover { border-color: rgba(71,85,105,.62); background: rgba(148,163,184,.18); color: #64748b; }
+      body[data-theme="dark"] .task-complete-btn:not([aria-pressed="true"]) { border-color: rgba(226,232,240,.4); background: rgba(15,23,42,.32); }
+      .task-complete-btn[aria-pressed="true"] { border-color: transparent; background: transparent; color: #475569; box-shadow: none; }
+      body[data-theme="dark"] .task-complete-btn[aria-pressed="true"] { color: #e2e8f0; }
       .task-complete-btn:focus-visible { outline: 2px solid #60a5fa; outline-offset: 1px; }
       .task-complete-btn:disabled { cursor: default; opacity: .65; }
       .task-item.is-completed .task-title { opacity: .86; }
       .task-item .task-main { padding-right: 28px; }
       .progress-grid[data-visible-count="3"] { grid-template-columns: repeat(3,minmax(0,1fr)); }
+      .progress-grid[data-visible-count="4"] { grid-template-columns: repeat(4,minmax(0,1fr)); }
       .pwa-install-btn[hidden] { display: none; }
       .progress-controls { display: flex; flex-wrap: wrap; gap: 7px; }
       .progress-control { padding: 7px 10px; border: 1px solid rgba(148,163,184,.24); border-radius: 9px; background: rgba(37,99,235,.08); color: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
@@ -98,9 +100,6 @@
       .progress-grid[hidden] { display: none !important; }
       .progress-grid[data-visible-count="1"] { grid-template-columns: 1fr; }
       .progress-grid[data-visible-count="2"] { grid-template-columns: repeat(2, minmax(0,1fr)); }
-      @media (max-width: 640px) {
-        .progress-grid[data-visible-count="2"], .progress-grid[data-visible-count="3"] { grid-template-columns: 1fr; }
-      }
     `;
     document.head.appendChild(style);
   }
